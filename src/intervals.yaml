@@ -1,0 +1,142 @@
+- interval: 1.5s
+  startup_delay: 20s
+  then:
+    if:
+      condition:
+        lambda: 'return !id(command_sent) && !id(new_input);'
+      then:
+        - uart.write: !lambda |-
+            enum PacketType {
+              INIT,
+              UPDATE,
+              STOP
+            };
+            static std::vector<uint8_t> queryData = {0xaa, 0xc0, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3F, 0x01, 0x55};
+            static std::vector<uint8_t> queryDataC4 = {0xAA, 0xC4, 0x00, 0x00, 0x00, 0x00, 0xA5, 0x5A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3B, 0x02, 0x55};
+            static std::vector<uint8_t> followMeData = {0xaa, 0xc6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x39, 0x00, 0x55};
+            
+            // if we havent sent a follow me packet in the last `follow_me_interval` seconds and the unit is not off, send follow me packet
+            if (id(uptime_sensor).state - id(last_follow_me_send_time) >= ${follow_me_interval} && id(op_bytes) != 0x00) {
+              PacketType packet = INIT;
+              double followMeTemp = id(follow_me_temp).state;
+
+              if (id(follow_me).state)
+              {
+                if (id(follow_me_init))
+                {
+                  // if we are initialized, send the update packet
+                  followMeData[10] = id(use_fahrenheit) ? 0x42 : 0x2;
+                  packet = UPDATE;
+                } else 
+                {
+                  // send the initialization packet
+                  followMeData[10] = id(use_fahrenheit) ? 0x46 : 0x6;
+                  id(follow_me_init) = true;
+                  packet = INIT;
+                }
+              } else 
+              {
+                if (id(follow_me_init)) 
+                {
+                  // turn off follow me and instruct unit to go back to its internal temperature sensor
+                  followMeData[10] = id(use_fahrenheit) ? 0x44 : 0x4;
+                  id(follow_me_init) = false;
+                  packet = STOP;
+                } else {
+                  goto skip_follow_me;
+                }
+              }
+              
+              if (id(smart_rounding)) {
+                // true if compressor is on or has been off for less than 2m. this is to account for the compressor cycling during defrost
+                bool compressor_on = (id(uptime_sensor).state - id(last_compressor_off_time) < 120 && id(uptime_sensor).state > 120) || id(compressor_status).state;
+                uint8_t set_point = id(use_fahrenheit) ? ((id(set_temp) - 32.0) * (5.0 / 9.0)) : id(set_temp);
+                
+                switch(id(op_bytes)) {
+                  case 0x84: // heat
+                    if (fabs(set_point - followMeTemp) > 0.5) {
+                      followMeData[11] = static_cast<uint8_t>(std::round(followMeTemp));
+                      break;
+                    }
+                    if (compressor_on) {
+                      followMeData[11] = static_cast<uint8_t>(std::floor(followMeTemp));
+                    } else {
+                      followMeData[11] = static_cast<uint8_t>(std::ceil(followMeTemp));
+                    }
+                    break;
+                  case 0x88: // cool
+                    if (fabs(set_point - followMeTemp) > 0.5) {
+                      followMeData[11] = static_cast<uint8_t>(std::round(followMeTemp));
+                      break;
+                    }
+                    if (compressor_on) {
+                      followMeData[11] = static_cast<uint8_t>(std::ceil(followMeTemp));
+                    } else {
+                      followMeData[11] = static_cast<uint8_t>(std::floor(followMeTemp));
+                    }
+                    break;
+                  default:
+                    break;
+                }
+              } else {
+                followMeData[11] = static_cast<uint8_t>(std::round(followMeTemp));
+              }
+
+              switch(packet) {
+                case INIT:
+                  ESP_LOGI("follow_me","Sending follow me initialization packet with temp of %iC",followMeData[11]);
+                  break;
+                case UPDATE:
+                  ESP_LOGI("follow_me","Sending follow me update packet with temp of %iC",followMeData[11]);
+                  break;
+                case STOP:
+                  ESP_LOGI("follow_me","Sending follow me stop packet--the T1 temp should revert to its internal sensor now");
+                  break;
+              }
+
+              // compute CRC
+              uint8_t i=0;
+              uint32_t crc=0;
+              int len=16;
+              for(i=0;i<len;i++)
+              { 
+                if(i!=14)
+                {
+                  crc+=followMeData[i];
+                }
+              }
+              followMeData[14] = 0xFF - (crc&0xFF);
+              
+              // update last sent time
+              id(last_follow_me_send_time) = static_cast<uint32_t>(id(uptime_sensor).state);
+
+              // implement timeout feature to prevent a stale value from keeping the unit stuck on or off
+              if (id(uptime_sensor).state - id(last_follow_me_update) > ${follow_me_timeout}) {
+                id(follow_me).turn_off();
+              }
+              return followMeData;
+            }
+            
+            // alternate between C0 and C4 queries to keep our sensors up to date
+            skip_follow_me:
+            if (id(alternate_query)) 
+            {
+              id(alternate_query) = false;
+              return queryDataC4;
+            } else 
+            {
+              id(alternate_query) = true;
+              return queryData;
+            }
+
+
+- interval: 3s
+  startup_delay: 10s
+  then:
+    - lambda: |-
+        // if we have new data to send, send the update packet
+        if (!id(first_boot) && id(new_input) && !id(command_sent)) {
+          id(send_button).press();
+          id(new_input) = false;
+          id(command_sent) = true;
+        }

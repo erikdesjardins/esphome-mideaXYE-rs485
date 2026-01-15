@@ -1,0 +1,113 @@
+# change GPIO pins to what you want to use
+tx_pin: ${tx_pin}
+rx_pin: ${rx_pin}
+baud_rate: ${baud_rate} # The out-of-box baud rate for my particular sensor->RS485 bridge
+stop_bits: 1
+parity: NONE
+data_bits: 8
+debug:
+  direction: BOTH
+  dummy_receiver: true
+  after:
+    bytes: 32
+  sequence:
+    - lambda: |-
+        static std::vector<uint8_t> checkData = {0xaa, 0xc0, 0x80, 0x00, 0x00, 0x00};
+        static const char *const TAG = "uart_debug";
+        static uint8_t separator = ' ';
+        std::string res;
+        if (direction == UART_DIRECTION_RX) {
+          res += "<<< ";
+        } else {
+          res += ">>> ";
+        }
+        size_t len = bytes.size();
+        char buf[5];
+        for (size_t i = 0; i < len; i++) {
+          if (i > 0) {
+            res += separator;
+          }
+          sprintf(buf, "%02X", bytes[i]);
+          res += buf;
+        }
+        if (id(log_rs485_comms)) {
+          ESP_LOGI(TAG, "%s", res.c_str());
+        }
+        delay(10);
+
+        if (direction == UART_DIRECTION_TX) {
+          return;
+        }
+        
+        if (id(command_sent)) {
+          // turn off command_sent flag so we know we can resume queries
+          id(command_sent)=false;
+        } else if (id(new_input)){
+          // do nothing if there is new input so we don't overwrite whatever the user did
+        } else {
+          // C4 queries are for setpoints (in F only) and T4 temps
+          if (bytes[1] == 0xC4) 
+          {
+            id(t4_temp).publish_state((bytes[21] - 0x28) / 2);
+            // sometimes this temporarily gives erroneous values before correcting itself, ignore them
+            if (id(use_fahrenheit))
+            {
+              if (bytes[18] > 0x87 && bytes[18] < 215) {
+                id(set_temp) = bytes[18] - 0x87;
+              }
+            }
+            
+            id(first_boot) = false;
+            return;
+          }
+          
+          // C6 is the follow me update. we don't do anything with the responses
+          if (bytes[1] == 0xC6) {
+            return;
+          }
+
+          // what follows is the standard C0 query which captures most of the sensor data
+          bool theyMatch = true;
+          uint8_t i;
+          for (i=0;i<6;++i)
+          {
+            if (i != 1) {
+              if (bytes[i]!=checkData[i])
+              {
+                theyMatch = false;
+              }
+            }
+          }
+          if (theyMatch)
+          {
+            if (id(compressor_status).state && !(bytes[19] & 0x01)) {
+              id(last_compressor_off_time) = static_cast<uint32_t>(id(uptime_sensor).state);
+            }
+
+            id(fan_bytes) = bytes[9];
+            id(op_bytes) = bytes[8];
+            id(mode_flag_bytes) = bytes[17];
+
+            // we only capture the celcius set point here, since it always comes back celcius no matter what mode the unit is in
+            if (!id(use_fahrenheit)) {
+              id(set_temp) = bytes[10];
+            }
+
+            // these sensors are offset by 0x28 and in units of 0.5C regardless of what mode the unit is in
+            id(t1_temp).publish_state((bytes[11] - 0x28) / 2);
+            id(t2a_temp).publish_state((bytes[12] - 0x28) / 2);
+            id(t2b_temp).publish_state((bytes[13] - 0x28) / 2);
+            id(t3_temp).publish_state((bytes[14] - 0x28) / 2);
+
+            // compressor status and defrost binary sensors. Defrost code may be different on other units, await user feedback
+            // byte 19 can apparently indicate outdoor fan and compressor on some units, hence the bitwise comparison for compressor only
+            id(compressor_status).publish_state(bytes[19] & 0x01);
+            id(defrost_status).publish_state(bytes[24] == 0x02);
+
+            // error codes. TODO: could use some more investigation
+            id(error_codes).publish_state({"E1: " + std::to_string(bytes[23]) + " E2: " + std::to_string(bytes[24])});
+          } else 
+          {
+            ESP_LOGI("custom","First 6 bytes of incoming data were bad, not using values");
+          }
+        }

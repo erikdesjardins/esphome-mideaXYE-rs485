@@ -1,0 +1,38 @@
+- platform: template
+  name: "Set Point"
+  id: setPoint
+  step: 1
+  mode: box
+  min_value: 0
+  max_value: 100
+  unit_of_measurement: "${'°F' if use_fahrenheit == true else '°C'}"
+  device_class: temperature
+  update_interval: 1s
+  lambda: |-
+      return static_cast<int>(id(set_temp));
+  set_action:
+    - lambda: |-
+        if (id(first_boot)) 
+        {
+          return;
+        }
+        id(set_temp) = static_cast<int>(x);
+        id(new_input) = true;
+
+
+# don't change this to F. You can display it in F in the home assistant UI, which will allow you to update the temp in F
+- platform: template
+  name: "Follow Me Temp"
+  id: follow_me_temp
+  step: 0.01
+  mode: box
+  min_value: 0
+  max_value: 100
+  restore_value: True
+  unit_of_measurement: "°C"
+  device_class: temperature
+  update_interval: 1s
+  optimistic: True
+  on_value: 
+    - lambda: |-
+        id(last_follow_me_update) = static_cast<uint32_t>(id(uptime_sensor).state);

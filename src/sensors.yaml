@@ -1,0 +1,67 @@
+# internal temp of esp device
+- platform: internal_temperature
+  name: "Internal Temperature"
+  state_class: measurement
+  device_class: temperature
+  unit_of_measurement: "°C"
+
+# dont change any of these temps to be F. They are always reported in C. If you want to display them in F, you can change the temperature unit in the home assistant UI
+
+# T1 temp is either the return air or the follow me temp. When you toggle follow me this value should be replaced by the follow me value
+- platform: template
+  name: "T1 Inlet/Room Temp"
+  unit_of_measurement: "°C"
+  id: t1_temp
+  update_interval: 1s
+  device_class: temperature
+  state_class: measurement
+
+- platform: template
+  name: "Current Setpoint"
+  unit_of_measurement: "${'°F' if use_fahrenheit == true else '°C'}"
+  id: tset
+  update_interval: 1s
+  device_class: temperature
+  state_class: measurement
+  lambda: |-
+    return id(set_temp);
+
+# Indoor coil. A appears to be the temp prior to air passing over the coil while B is the temp before  
+- platform: template
+  name: "T2A Indoor Coil Temp A"
+  id: t2a_temp
+  unit_of_measurement: "°C"
+  update_interval: 1s
+  device_class: temperature
+  state_class: measurement
+
+- platform: template
+  name: "T2B Indoor Coil Temp B"
+  id: t2b_temp
+  unit_of_measurement: "°C"
+  update_interval: 1s
+  device_class: temperature
+  state_class: measurement
+
+- platform: template
+  name: "T3 Outdoor Coil Temp"
+  id: t3_temp
+  unit_of_measurement: "°C"
+  update_interval: 1s
+  device_class: temperature
+  state_class: measurement
+
+- platform: template
+  name: "T4 Outdoor Temp"
+  id: t4_temp
+  unit_of_measurement: "°C"
+  update_interval: 1s
+  device_class: temperature
+  state_class: measurement
+
+- platform: uptime
+  id: uptime_sensor
+  name: "Uptime Sensor"
+  type: seconds
+  update_interval: 1s
+  internal: True

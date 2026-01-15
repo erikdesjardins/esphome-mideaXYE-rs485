@@ -1,0 +1,81 @@
+# the 2 error code registers combined in one message. it's just the code number,
+# you will need the service manual to decode them probably. I haven't tested any error
+# codes yet. 
+- platform: template
+  id: error_codes
+  name: "Error Codes"
+  update_interval: 1s
+
+- platform: template
+  name: "Operating Mode"
+  update_interval: 1s
+  lambda: |-
+    switch (id(op_bytes))
+    {
+      case 0x00:
+        id(op) = "off";
+        break;
+      case 0x91:
+        // this is the flag for heating while in auto
+        id(op) = "auto (idle)";
+        break;
+      case 0x98:
+        // this is the flag for cooling in auto mode
+        id(op) = "auto (cooling)";
+        break;
+      case 0x10:
+        // this is the flag for startup in auto mode
+        id(op) = "auto (15m startup)";
+        break;
+      case 0x94:
+        // this is the flag for idle in auto mode
+        id(op) = "auto (heating)";
+        break;
+      case 0x88:
+        id(op) = "cool";
+        break;
+      case 0x82:
+        id(op) = "dry";
+        break;
+      case 0x84:
+        id(op) = "heat";
+        break;
+      case 0x81:
+        id(op) = "fan_only";
+        break;
+      default:
+        id(op) = "off";
+    }
+    return id(op);
+
+- platform: template
+  name: "Fan Mode"
+  update_interval: 1s
+  lambda: |-
+    switch (id(fan_bytes))
+    {
+      case 0x80:
+        id(fan) = "auto";
+        break;
+      case 0x81:
+        id(fan) = "auto (high)";
+        break;
+      case 0x82:
+        id(fan) = "auto (medium)";
+        break;
+      case 0x84:
+        id(fan) = "auto (low)";
+        break;
+      case 0x01:
+        id(fan) = "high";
+        break;
+      case 0x02:
+        id(fan) = "medium";
+        break;
+      case 0x04:
+        id(fan) = "low";
+        break;
+      default:
+        id(fan) = "auto";
+    }
+    return id(fan);
