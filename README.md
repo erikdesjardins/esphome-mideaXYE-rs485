@@ -3,95 +3,83 @@ ESPhome files to communicate with Midea AC units via RS485 XYE (CCM) terminals.
 
 This project will allow you to wirelessly communicate with your Midea AC unit via the XYE terminals.  These terminals are normally used for communication with a Central Controller Module (CCM) but the data has been reverse engineered (https://codeberg.org/xye/xye).  I initially used the code from bunicutz project https://github.com/Bunicutz/ESP32_Midea_RS485/tree/main, but as of ESPHome 2025.2.0 custom components are no longer supported and that code does not work.  This project doesn't use custom components, just several lambda functions and a header file.  I'm not a C++ developer, so forgive me if the code isn't very elegant. It gets the job done though!
 
-# NOTE
-For some reason when this boots, it will set your unit to OFF. Just remember that every time you upload new code or restart the ESP device it will probably turn off your AC.  I am working to add a few globals that save the states of things and restore from flash, then set the variables and send a new command to restore settings. But haven't done this yet.
-
-# ESP32-based setup
+# Requirements
 ## Hardware
-1. ESP32 device
-2. RS-485 transceiver with **automatic flow control** (if not you will need to edit my code to switch flow control manually after serial read/write)
-3. Midea-like heat pump or air handler with **XYE terminals**. 
-4. Connect ESP Vin, GND, GPIO16 to RX, and GPIO17 to TX on the UART side of the transceiver (can edit these in the header file if necessary).
-5. On the RS-485 transceiver connect A to X, B to Y, and GND to E (optional).
-## Software
-This was intended for use with Home Assistant, the YAML file is for ESPHome. 
-
-1. Create a new ESPHome device and configure it with your wifi info
-2. Paste the contents of "esphome-mideaXYE.yaml" under the auto-populated info in your new ESPHome device.
-3. Under the `esphome:` yaml header in your file add:
-```
-includes:
-  - xyeVars.h
-on_boot:
-  priority: 800
-  then:
-    - lambda: |-
-        mySerial.begin(4800, SERIAL_8N1, RX_PIN, TX_PIN);
-```
-4. Confirm that you're using the `arduino` framework (if you get an error during compilation about `HardwareSerial` this is probably the reason)
-```
-esp32:
-  variant: [ your esp32 variant goes here ]
-  framework:
-    type: arduino
-```
-5. Copy "xyeVars.h" into your /config/esphome directory (or wherever your ESPhome YAML files are in your setup).
-6. Edit the #define section of the xyeVars.h file to match your GPIO pins for RX and TX (if necessary).  
-7. Uncomment the entire thermostat section at the bottom and change `internal: True` to False if you want ESPHome to create a thermostat entity
-8. When I changed my wired controller to Fahrenheit it seems that internally the air handler / heat pump is using all degrees Fahrenheit now.  If you're using Celsius then comment out the Fahrenheit lines and uncomment Celsius lines in the yaml file. As long as you have your default units set correctly in Home Assistant AND your "wired controller" for your unit is reading out in Celsius then everything should be fine, no conversions or math necessary.
-    
-# ESP8266-based device setup --- UNTESTED
-## Hardware
-1. ESP8266 device
-2. RS-485 transceiver with **automatic flow control** (if not you will need to edit my code to switch flow control manually after serial read/write)
-3. Midea-like heat pump or air handler with **XYE terminals**. 
-4. Connect ESP Vin, GND, GPIO13 to RX, and GPIO15 to TX on the UART side of the transceiver).
-5. On the RS-485 transceiver connect A to X, B to Y, and GND to E (optional).
+1. ESP32 device - The m5stack [Atom Lite](https://shop.m5stack.com/products/atom-lite-esp32-development-kit) with the [Tail485 adapter](https://shop.m5stack.com/products/atom-tail485) are recommended for easy setup, especially if you are not experienced with esp32. 
+2. Some thermostat wire or 22 gauge wire
+3. If you use different hardware:
+    * You need an RS-485 transceiver with **automatic flow control** (if not you will need to edit my code to switch flow control manually after serial read/write)
+4. Midea-like heat pump or air handler with **XYE terminals**.
+    * If your system supports 24v communication, make sure its dip switches are configured for RS485
+    * Similarly, the system will work best if you have RS485 communication between the indoor and outdoor units in a split system (not relevant for mini splits)
 
 ## Software
-This was intended for use with Home Assistant, the YAML file is for ESPHome. 
+1. ESPHome
+2. Home Assistant
 
-1. Create a new ESPHome device and configure it with your wifi info
-2. Paste the contents of "esphome-mideaXYE.yaml" under the auto-populated info in your new ESPHome device
-3. Under the `logger:` section add `- baud_rate: 0` to disable logging on the serial bus (there is only 1 available and we need it!).
-4. Under the `esphome:` yaml header in your file add:
+# Setup
+## Software
+1. Flash your esp32 device with ESPHome
+2. Modify the default boilerplate as needed with your wifi info and whatever else you prefer on your devices
+3. Below the standard boilerplate, paste the following:
+```yaml
+packages:
+  esphome-mideaXYE-rs485:
+    url: https://github.com/wtahler/esphome-mideaXYE-rs485
+    ref: main
+    files:
+      - path: midea_xye.yaml
+        vars:
+          tx_pin: 26
+          rx_pin: 32
 ```
-includes:
-  - xyeVars.h
-on_boot:
-  priority: 800
-  then:
-    - lambda: |-
-        mySerial.begin(4800,Serial_8N1);
-        mySerial.swap();
-```
-5. Confirm that you're using the `arduino` framework (if you get an error during compilation about `HardwareSerial` this is probably the reason)
-```
-esp32:
-  variant: [ your esp32 variant goes here ]
-  framework:
-    type: arduino
-```
-6. Copy "xyeVars.h" into your /config/esphome directory (or wherever your ESPhome YAML files are in your setup).
-7. Uncomment the entire thermostat section at the bottom and change `internal: True` to False if you want ESPHome to create a thermostat entity
+4. Modify the `tx_pin` and `rx_pin` to match your device. 
 
-# Other info
-When I changed my wired controller to Fahrenheit it seems that internally the air handler / heat pump is using all degrees Fahrenheit now.  If you're using Celsius then comment out the Fahrenheit lines and uncomment Celsius lines in the yaml file. As long as you have your default units set correctly in Home Assistant AND your "wired controller" for your unit is reading out in Celsius then everything should be fine, no conversions or math necessary.
+## Hardware
+1. Open up your air handler and find the XYE terminal.
+    * <details>
+        <summary>Spoiler: Image</summary>
+      
+        ![XYE Terminal Photo](https://github.com/user-attachments/assets/d5fb2233-c0dc-42a9-9eae-0333b8cd70b1)
+      </details>
 
-Note: The ESPhome thermostat entity kind of sucks. Because the heat pump can heat and cool, the displayed thermostat shows up as a dual-setpoint thermostat which isn't really accurate.  I recommend creating your own template thermostat with the custom entity from https://github.com/jcwillox/hass-template-climate/tree/main.
+3. On your RS485 transceiver, connect A -> X, B -> Y, and E -> Ground. Note that on most midea systems the XYE terminal comes off, which makes it much easier to access the screws.
+4. If your transceiver accepts 12v power, you can connect it to the HA terminal (included in photo above). If it accepts 24v power and you have a split system, you can connect it to the thermostat R terminal. Make sure you verify voltages of your specific air handler before connecting your esp32 to it. You could potentially fry your esp device!
+    * If your air handler does not provide power compatible with your transceiver, you will have to power it externally with USB or some other power source.
 
 # Home Assistant
 The device that is created will have the following entities:
-- Select Fan Mode - these are standard Home Assistant fan modes, compatible with a climate device
-- Select HVAC Mode - these are standard HVAC modes, compatible with a climate device
-- Input Number Set temperature - this is the current target temperature and input for target temperature
 
-- Sensor Inlet Air Temperature - T1, air measured coming into the air handler. If you have "follow me" turned on this sensor will eventually get stale.
-- Sensor Coil A Temp - Refrigerant temperature, this value will get hot/cold when actively heating or cooling
-- Sensor Coil B Temp - Refrigerant temperature (this value is stuck for me, not useful)
-- Sensor Outdoor Temp
-- Sensor Error Codes - 2 bytes of error codes. I haven't had an error code to test these but they will be the integer form of the 2 hex codes. The reverese engineered XYE notes aren't very clear on these.
-- Sensor Full data string - Hex bytes received most recently from unit. Can match these up to the XYE reverse engineered values to check what data is coming in. 
+| Name | Type | Description |
+| -------- | -------- | -------- |
+| **Fan Mode** | Select | Select the fan mode |
+| **Follow Me** | Button | Tell the unit what the current indoor temperature is. Used in conjunction with the Follow Me Temp entity |
+| **Follow Me Temp** | Number | The temperature we should pass to the indoor unit. Note that by default it is rounded up or down to minimize short cycling since it can only be sent in increments of 1C. You can disable this with the `smart_rounding` configuration variable |
+| **Operating Mode** | Select | Select the operating mode of the unit |
+| **Set Point** | Number | The set point of the HVAC system |
+| **Compressor status** | Binary Sensor | Whether the outdoor unit is on or off |
+| **Current Setpoint** | Sensor | The setpoint we have read from the device |
+| **Defrost** | Binary Sensor | Whether the outdoor unit is currently defrosting|
+| **Error Codes** | Sensor | The error codes from the device displayed in hex. Should match what you see on the indoor unit if it has a display  |
+| **Fan Mode** | Sensor | The current fan mode we've read from the device. If in auto fan mode it will indicate which speed the unit has chosen |
+| **Operating Mode** | Sensor | The current operating mode we've read from the device |
+| **T1 Inlet/Room Temp** | Sensor | Either the temperature of the return air sensor in your air handler, or the follow me temperature value we sent to the device |
+| **T2A Indoor Coil Temp A** | Sensor | One of two indoor coil temperatures. In heating mode it should be after the air has passed over the coil. In cooling mode it should be before the air has passed over the coil |
+| **T2B Indoor Coil Temp A** | Sensor | Same as above, except the opposite order |
+| **T3 Outdoor Coil Temp** | Sensor | Temperature of the outdoor coil. Used mostly by the outdoor unit to determine when to defrost |
+| **T4 Outdoor Temp** | Sensor | Outdoor temp--I wouldn't expect too much accuracy from this sensor |
+
+# Configuration Variables
+| Name | Type | Default | Description |
+| -------- | -------- | -------- | -------- |
+| **rx_pin** | GPIO Pin | N/A | RX pin for your RS485 Transceiver |
+| **tx_pin** | GPIO Pin | N/A | TX pin for your RS485 Transceiver |
+| **baud_rate** | int | `4800` | Baud rate--shouldn't need to change this |
+| **use_fahrenheit** | bool | `true` | Whether to use F or C for the set point. Note that all other values will always be reported in C. You may need to set the set point again after changing this |
+| **smart_rounding** | bool | `true` | Whether to round the follow me temp differently depending on if the compressor is on or off to lengthen cycles. If you want regular rounding, disable this |
+| **follow_me_timeout** | int | `7200` | Time in seconds after which to disable follow me if you have not updated the temperature. This is to prevent locking the system on or off if home assistant goes offline |
+| **follow_me_interval** | int | `30` | Time in seconds between follow me update packets |
+| **log_rs485_comms** | bool | `true` | Whether or not to log the RS485 communications. If you need to submit logs with a bug report please keep this enabled |
 
 # How it works
 The code sends a `query` set every 15s.  It checks `mySerial.available()` every 1s and reads data (there will only be data there after sending a query or a command).  The "receiver" sensor is running the 1s read check and updating internal variables with the read values.  Each of the actual sensors (temperatures, setpoints, modes, etc) are checking the internal values every 1s.  If any of the input elements are changed from home assistant, they fire a lambda function that forms a `command` set and writes it to the serial bus.  The response to a command to change something is always the old state (not sure why) so I dumped the first response after sending a command. 
