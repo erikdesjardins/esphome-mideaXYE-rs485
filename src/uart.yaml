@@ -12,7 +12,7 @@ debug:
     bytes: 32
   sequence:
     - lambda: |-
-        static std::vector<uint8_t> checkData = {0xaa, 0xc0, 0x80, 0x00, 0x00, 0x00};
+        static std::vector<uint8_t> checkData = {0xaa, 0xc0, 0x00, 0x00, 0x00, 0x00};
         static const char *const TAG = "uart_debug";
         static uint8_t separator = ' ';
         std::string res;
