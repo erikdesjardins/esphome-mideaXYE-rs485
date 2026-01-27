@@ -48,7 +48,7 @@ debug:
           // C4 queries are for setpoints (in F only) and T4 temps
           if (bytes[1] == 0xC4) 
           {
-            id(t4_temp).publish_state((bytes[21] - 0x28) / 2);
+            id(t4_temp).publish_state((bytes[21] - 0x28) / 2.0);
             // sometimes this temporarily gives erroneous values before correcting itself, ignore them
             if (id(use_fahrenheit))
             {
@@ -94,10 +94,10 @@ debug:
             }
 
             // these sensors are offset by 0x28 and in units of 0.5C regardless of what mode the unit is in
-            id(t1_temp).publish_state((bytes[11] - 0x28) / 2);
-            id(t2a_temp).publish_state((bytes[12] - 0x28) / 2);
-            id(t2b_temp).publish_state((bytes[13] - 0x28) / 2);
-            id(t3_temp).publish_state((bytes[14] - 0x28) / 2);
+            id(t1_temp).publish_state((bytes[11] - 0x28) / 2.0);
+            id(t2a_temp).publish_state((bytes[12] - 0x28) / 2.0);
+            id(t2b_temp).publish_state((bytes[13] - 0x28) / 2.0);
+            id(t3_temp).publish_state((bytes[14] - 0x28) / 2.0);
 
             // compressor status and defrost binary sensors. Defrost code may be different on other units, await user feedback
             // byte 19 can apparently indicate outdoor fan and compressor on some units, hence the bitwise comparison for compressor only
