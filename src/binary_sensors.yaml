@@ -1,6 +1,6 @@
 - platform: template
   id: compressor_status
-  name: "Compressor Status"
+  name: "Compressor"
 
 - platform: template
   id: defrost_status
