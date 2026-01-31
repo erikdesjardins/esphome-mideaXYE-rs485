@@ -6,12 +6,6 @@
 
 ### Unit state
 
-- id: fan_bytes
-  type: uint8_t
-
-- id: op_bytes
-  type: uint8_t
-
 - id: mode_flag_bytes
   type: uint8_t
 
@@ -34,12 +28,6 @@
 - id: last_follow_me_update
   type: uint32_t
 
-- id: op
-  type: std::string
-- id: fan
-  type: std::string
-
-# Message send queue
 - id: send_queue
   # In practice, up to 4 messages can be in flight: set, query, extended query, follow me
   type: std::array<std::array<uint8_t, 16>, 4>

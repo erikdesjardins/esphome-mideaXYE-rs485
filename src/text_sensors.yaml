@@ -4,42 +4,11 @@
 - platform: template
   id: error_codes
   name: "Error Codes"
-  update_interval: 1s
 
 - platform: template
+  id: op_mode_detailed
   name: "Detailed Operating Mode"
-  update_interval: 1s
-  lambda: |-
-    switch (id(op_bytes))
-    {
-      case 0x00: return {"off"};
-      case 0x10: return {"auto (15m startup)"};
-      case 0x91: return {"auto (heating)"};
-      case 0x98: return {"auto (cooling)"};
-      case 0x94: return {"auto (idle)"};
-      case 0x88: return {"cool"};
-      case 0x82: return {"dry"};
-      case 0x84: return {"heat"};
-      case 0x81: return {"fan_only"};
-      default:
-        ESP_LOGW("custom","Unknown op mode byte: %02X", id(op_bytes));
-        return {"off"};
-    }
 
 - platform: template
+  id: fan_mode_detailed
   name: "Detailed Fan Mode"
-  update_interval: 1s
-  lambda: |-
-    switch (id(fan_bytes))
-    {
-      case 0x80: return {"auto"};
-      case 0x81: return {"auto (high)"};
-      case 0x82: return {"auto (medium)"};
-      case 0x84: return {"auto (low)"};
-      case 0x01: return {"high"};
-      case 0x02: return {"medium"};
-      case 0x04: return {"low"};
-      default:
-        ESP_LOGW("custom","Unknown fan mode byte: %02X", id(fan_bytes));
-        return {"auto"};
-    }

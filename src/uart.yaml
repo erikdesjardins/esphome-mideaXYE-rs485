@@ -75,12 +75,89 @@ debug:
         // Message handling
 
         switch (bytes[0x01]) {
-          // Query
+          ////////////////////////////////////////
+          // C0 - Query
+          ////////////////////////////////////////
           case 0xC0: {
             // Don't overwrite pending control state which hasn't been sent yet.
             if (!id(new_input)) {
-              id(op_bytes) = bytes[8];
-              id(fan_bytes) = bytes[9];
+              // Operating mode
+              char* op_mode_str;
+              char* op_mode_detailed_str;
+              switch (bytes[8]) {
+                case 0x00:
+                  op_mode_str = op_mode_detailed_str = "off";
+                  break;
+                case 0x10:
+                  op_mode_str = "auto";
+                  op_mode_detailed_str = "auto (15m startup)";
+                  break;
+                case 0x91:
+                  op_mode_str = "auto";
+                  op_mode_detailed_str = "auto (heating)";
+                  break;
+                case 0x98:
+                  op_mode_str = "auto";
+                  op_mode_detailed_str = "auto (cooling)";
+                  break;
+                case 0x94:
+                  op_mode_str = "auto";
+                  op_mode_detailed_str = "auto (idle)";
+                  break;
+                case 0x88:
+                  op_mode_str = op_mode_detailed_str = "cool";
+                  break;
+                case 0x82:
+                  op_mode_str = op_mode_detailed_str = "dry";
+                  break;
+                case 0x84:
+                  op_mode_str = op_mode_detailed_str = "heat";
+                  break;
+                case 0x81:
+                  op_mode_str = op_mode_detailed_str = "fan_only";
+                  break;
+                default:
+                  op_mode_str = op_mode_detailed_str = "off";
+                  ESP_LOGW("custom", "Unknown op mode byte: %02X", bytes[8]);
+              }
+              id(op_mode).publish_state(op_mode_str);
+              id(op_mode_detailed).publish_state(op_mode_detailed_str);
+
+              // Fan mode
+              char* fan_mode_str;
+              char* fan_mode_detailed_str;
+              switch (bytes[9]) {
+                case 0x80:
+                  fan_mode_str = fan_mode_detailed_str = "auto";
+                  break;
+                case 0x81:
+                  fan_mode_str = "auto";
+                  fan_mode_detailed_str = "auto (high)";
+                  break;
+                case 0x82:
+                  fan_mode_str = "auto";
+                  fan_mode_detailed_str = "auto (medium)";
+                  break;
+                case 0x84:
+                  fan_mode_str = "auto";
+                  fan_mode_detailed_str = "auto (low)";
+                  break;
+                case 0x01:
+                  fan_mode_str = fan_mode_detailed_str = "high";
+                  break;
+                case 0x02:
+                  fan_mode_str = fan_mode_detailed_str = "medium";
+                  break;
+                case 0x04:
+                  fan_mode_str = fan_mode_detailed_str = "low";
+                  break;
+                default:
+                  fan_mode_str = fan_mode_detailed_str = "auto";
+                  ESP_LOGW("custom", "Unknown fan mode byte: %02X", bytes[9]);
+              }
+              id(fan_mode).publish_state(fan_mode_str);
+              id(fan_mode_detailed).publish_state(fan_mode_detailed_str);
+
               id(mode_flag_bytes) = bytes[17];
 
               // we only capture the celcius set point here, since it always comes back celcius no matter what mode the unit is in
@@ -107,14 +184,16 @@ debug:
 
             break;
           }
-
-          // Set
+          ////////////////////////////////////////
+          // C3 - Set
+          ////////////////////////////////////////
           case 0xC3: {
             // Ignore
             break;
           }
-
-          // Extended query
+          ////////////////////////////////////////
+          // C4 - Extended Query
+          ////////////////////////////////////////
           case 0xC4: {
             id(t4_temp).publish_state((bytes[0x15] - 0x28) / 2.0);
 
@@ -130,8 +209,9 @@ debug:
 
             break;
           }
-
-          // Extended set (follow me)
+          ////////////////////////////////////////
+          // C6 - Extended Set (follow me)
+          ////////////////////////////////////////
           case 0xC6: {
             // Ignore
             break;

@@ -1,124 +1,32 @@
 - platform: template
-  name: "Fan Mode"
-  id: fanMode
-  update_interval: 1s
-  options:
-    - 'low'
-    - 'medium'
-    - 'high'
-    - 'auto'
-    
-  lambda: |-
-    switch (id(fan_bytes))
-    {
-      case 0x80:
-        id(fan) = "auto";
-        break;
-      case 0x01:
-        id(fan) = "high";
-        break;
-      case 0x02:
-        id(fan) = "medium";
-        break;
-      case 0x04:
-        id(fan) = "low";
-        break;
-      default:
-        id(fan) = "auto";
-    }
-    return id(fan);
-  set_action: 
-    - lambda: |-
-        if (id(first_boot)) 
-        {
-          return;
-        }
-        if (id(fan) != x)
-        {
-          id(fan) = x;
-          ESP_LOGI("custom","change fan to: %x",x);
-          if (id(fan) == "high"){
-            id(fan_bytes) = 0x01;
-          } else if (id(fan) == "auto"){
-            id(fan_bytes) = 0x80;
-          } else if (id(fan) == "medium"){
-            id(fan_bytes) = 0x02;
-          } else if (id(fan) == "low"){
-            id(fan_bytes) = 0x04;
-          } else {
-            id(fan_bytes) = 0x80;
-            ESP_LOGI("custom","Defaulting to auto, invalid fan input: %s",x);
-          }
-          ESP_LOGI("custom","selected %x",id(fan_bytes));
-          id(new_input) = true;
-        }
-
-
-- platform: template
-  id: opMode
+  id: op_mode
   name: "Operating Mode"
-  update_interval: 1s
   options:
-    - 'off'
-    - 'auto'
-    - 'cool'
-    - 'dry'
-    - 'heat'
-    - 'fan_only'
-  lambda: |-
-    switch (id(op_bytes))
-    {
-      case 0x00:
-        id(op) = "off";
-        break;
-      case 0x10: // startup in auto mode
-      case 0x91: // heating in auto mode
-      case 0x98: // cooling in auto mode
-      case 0x94: // idle in auto mode
-        id(op) = "auto";
-        break;
-      case 0x88:
-        id(op) = "cool";
-        break;
-      case 0x82:
-        id(op) = "dry";
-        break;
-      case 0x84:
-        id(op) = "heat";
-        break;
-      case 0x81:
-        id(op) = "fan_only";
-        break;
-      default:
-        id(op) = "off";
-    }
-    return id(op);
+    - "off"
+    - auto
+    - cool
+    - dry
+    - heat
+    - fan_only
+  initial_option: "off"
+  optimistic: true
   set_action:
     - lambda: |-
-        if (id(first_boot)) 
-        {
-          return;
-        }
-        if (id(op) != x)
-        {
-          id(unit_follow_me_init) = false;
-          id(op) = x;
-          if (id(op) == "off"){
-            id(op_bytes) = 0x00;
-          } else if (id(op) == "auto"){
-            id(op_bytes) = 0x90;
-          } else if (id(op) == "cool"){
-            id(op_bytes) = 0x88;
-          } else if (id(op) == "dry"){
-            id(op_bytes) = 0x82;
-          } else if (id(op) == "heat"){
-            id(op_bytes) = 0x84;
-          } else if (id(op) == "fan_only"){
-            id(op_bytes) = 0x81;
-          } else {
-            id(op_bytes) = 0x00;
-            ESP_LOGI("custom","Defaulting to off, invalid mode input: %s",x);
-          }
-          ESP_LOGI("custom","selected %x for mode",id(op_bytes));
-          id(new_input) = true;
-        }
+        id(new_input) = true;
+
+        // Changing mode invalidates follow me
+        id(unit_follow_me_init) = false;
+
+- platform: template
+  id: fan_mode
+  name: "Fan Mode"
+  options:
+    - low
+    - medium
+    - high
+    - auto
+  initial_option: auto
+  optimistic: true
+  set_action:
+    - lambda: |-
+        id(new_input) = true;
