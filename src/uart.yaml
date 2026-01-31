@@ -185,7 +185,7 @@ debug:
             break;
           }
           ////////////////////////////////////////
-          // C3 - Set
+          // C3 - Set (control updates)
           ////////////////////////////////////////
           case 0xC3: {
             // Ignore
@@ -204,8 +204,6 @@ debug:
                 id(set_temp).publish_state(bytes[18] - 0x87);
               }
             }
-
-            id(first_boot) = false;
 
             break;
           }

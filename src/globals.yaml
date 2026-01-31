@@ -15,10 +15,6 @@
 
 ### Internal state
 
-- id: first_boot
-  type: bool
-  initial_value: 'true'
-
 - id: new_input
   type: bool
   initial_value: 'false'

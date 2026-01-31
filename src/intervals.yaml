@@ -73,11 +73,10 @@
       // we need to send the control update first, since follow me is invalidated on mode change.
 
       ////////////////////////////////////////
-      // C3 - Set
+      // C3 - Set (control updates)
       ////////////////////////////////////////
 
-      // Send control updates (but not on first boot)
-      if (!id(first_boot) && id(new_input)) {
+      if (id(new_input)) {
         id(new_input) = false;
 
         uint8_t op_bytes;
@@ -134,8 +133,7 @@
       // C6 - Extended Set (follow me)
       ////////////////////////////////////////
 
-      // Send follow me updates (but not on first boot)
-      if (!id(first_boot) && id(uptime_sensor).state - id(last_follow_me_message) > 30) {
+      if (id(uptime_sensor).state - id(last_follow_me_message) > 30) {
         id(last_follow_me_message) = static_cast<uint32_t>(id(uptime_sensor).state);
 
         do {
