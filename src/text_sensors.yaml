@@ -7,7 +7,7 @@
   update_interval: 1s
 
 - platform: template
-  name: "Operating Mode"
+  name: "Detailed Operating Mode"
   update_interval: 1s
   lambda: |-
     switch (id(op_bytes))
@@ -21,11 +21,13 @@
       case 0x82: return {"dry"};
       case 0x84: return {"heat"};
       case 0x81: return {"fan_only"};
-      default: return {"off"};
+      default:
+        ESP_LOGW("custom","Unknown op mode byte: %02X", id(op_bytes));
+        return {"off"};
     }
 
 - platform: template
-  name: "Fan Mode"
+  name: "Detailed Fan Mode"
   update_interval: 1s
   lambda: |-
     switch (id(fan_bytes))
@@ -37,5 +39,7 @@
       case 0x01: return {"high"};
       case 0x02: return {"medium"};
       case 0x04: return {"low"};
-      default: return {"auto"};
+      default:
+        ESP_LOGW("custom","Unknown fan mode byte: %02X", id(fan_bytes));
+        return {"auto"};
     }
