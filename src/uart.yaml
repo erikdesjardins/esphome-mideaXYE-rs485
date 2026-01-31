@@ -31,7 +31,9 @@ debug:
             ESP_LOGW("uart_debug", "Bad UART packet (byte 0x00): bad preamble: %02X", bytes[0x00]);
             return;
           }
+
           // bytes[0x01] is the command flag, to be handled below
+
           if (bytes[0x02] != 0x00) {
             ESP_LOGW("uart_debug", "Bad UART packet (byte 0x02): unexpected direction flag: %02X", bytes[0x02]);
             return;
