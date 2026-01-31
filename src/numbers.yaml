@@ -19,7 +19,6 @@
         id(set_temp) = static_cast<int>(x);
         id(new_input) = true;
 
-
 # don't change this to F. You can display it in F in the home assistant UI, which will allow you to update the temp in F
 - platform: template
   name: "Follow Me Temp"

@@ -58,7 +58,6 @@ The device that is created will have the following entities:
 | **Operating Mode** | Select | Select the operating mode of the unit |
 | **Set Point** | Number | The set point of the HVAC system |
 | **Compressor status** | Binary Sensor | Whether the outdoor unit is on or off |
-| **Current Setpoint** | Sensor | The setpoint we have read from the device |
 | **Defrost** | Binary Sensor | Whether the outdoor unit is currently defrosting|
 | **Error Codes** | Sensor | The error codes from the device displayed in hex. Should match what you see on the indoor unit if it has a display  |
 | **Fan Mode** | Sensor | The current fan mode we've read from the device. If in auto fan mode it will indicate which speed the unit has chosen |

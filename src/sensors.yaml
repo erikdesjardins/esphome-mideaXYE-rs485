@@ -16,16 +16,6 @@
   device_class: temperature
   state_class: measurement
 
-- platform: template
-  name: "Current Setpoint"
-  unit_of_measurement: "${'°F' if use_fahrenheit == true else '°C'}"
-  id: tset
-  update_interval: 1s
-  device_class: temperature
-  state_class: measurement
-  lambda: |-
-    return id(set_temp);
-
 # Indoor coil. A appears to be the temp prior to air passing over the coil while B is the temp before  
 - platform: template
   name: "T2A Indoor Coil Temp A"
