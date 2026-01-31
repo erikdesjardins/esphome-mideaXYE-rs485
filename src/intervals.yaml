@@ -80,35 +80,35 @@
         id(new_input) = false;
 
         uint8_t op_bytes;
-        if (id(op_mode).state == "off") {
+        if (id(op_mode).current_option() == "off") {
           op_bytes = 0x00;
-        } else if (id(op_mode).state == "auto") {
+        } else if (id(op_mode).current_option() == "auto") {
           op_bytes = 0x90;
-        } else if (id(op_mode).state == "cool") {
+        } else if (id(op_mode).current_option() == "cool") {
           op_bytes = 0x88;
-        } else if (id(op_mode).state == "dry") {
+        } else if (id(op_mode).current_option() == "dry") {
           op_bytes = 0x82;
-        } else if (id(op_mode).state == "heat") {
+        } else if (id(op_mode).current_option() == "heat") {
           op_bytes = 0x84;
-        } else if (id(op_mode).state == "fan_only") {
+        } else if (id(op_mode).current_option() == "fan_only") {
           op_bytes = 0x81;
         } else {
           op_bytes = 0x00;
-          ESP_LOGW("custom", "Defaulting to off, invalid op mode input: %s", id(op_mode).state.c_str());
+          ESP_LOGW("custom", "Defaulting to off, invalid op mode input: %s", id(op_mode).current_option().c_str());
         }
 
         uint8_t fan_bytes;
-        if (id(fan_mode).state == "high") {
+        if (id(fan_mode).current_option() == "high") {
           fan_bytes = 0x01;
-        } else if (id(fan_mode).state == "auto") {
+        } else if (id(fan_mode).current_option() == "auto") {
           fan_bytes = 0x80;
-        } else if (id(fan_mode).state == "medium") {
+        } else if (id(fan_mode).current_option() == "medium") {
           fan_bytes = 0x02;
-        } else if (id(fan_mode).state == "low") {
+        } else if (id(fan_mode).current_option() == "low") {
           fan_bytes = 0x04;
         } else {
           fan_bytes = 0x80;
-          ESP_LOGW("custom", "Defaulting to auto, invalid fan input: %s", id(fan_mode).state.c_str());
+          ESP_LOGW("custom", "Defaulting to auto, invalid fan input: %s", id(fan_mode).current_option().c_str());
         }
 
         uint8_t encoded_temp;
@@ -138,7 +138,7 @@
 
         do {
           // If the unit is off, do not send follow me packets
-          if (id(op_mode).state == "off") {
+          if (id(op_mode).current_option() == "off") {
             break;
           }
 

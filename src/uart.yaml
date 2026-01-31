@@ -82,8 +82,8 @@ debug:
             // Don't overwrite pending control state which hasn't been sent yet.
             if (!id(new_input)) {
               // Operating mode
-              char* op_mode_str;
-              char* op_mode_detailed_str;
+              const char* op_mode_str;
+              const char* op_mode_detailed_str;
               switch (bytes[8]) {
                 case 0x00:
                   op_mode_str = op_mode_detailed_str = "off";
@@ -124,8 +124,8 @@ debug:
               id(op_mode_detailed).publish_state(op_mode_detailed_str);
 
               // Fan mode
-              char* fan_mode_str;
-              char* fan_mode_detailed_str;
+              const char* fan_mode_str;
+              const char* fan_mode_detailed_str;
               switch (bytes[9]) {
                 case 0x80:
                   fan_mode_str = fan_mode_detailed_str = "auto";
