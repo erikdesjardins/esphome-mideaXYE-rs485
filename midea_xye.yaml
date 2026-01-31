@@ -2,14 +2,11 @@ defaults:
   baud_rate: 4800
   use_fahrenheit: true
   follow_me_timeout: 7200
-  follow_me_interval: 30
   log_rs485_comms: true
 
 globals: !include src/globals.yaml
 
 uart: !include src/uart.yaml
-
-button: !include src/buttons.yaml
 
 interval: !include src/intervals.yaml
 

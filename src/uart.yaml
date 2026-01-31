@@ -1,7 +1,6 @@
-# change GPIO pins to what you want to use
 tx_pin: ${tx_pin}
 rx_pin: ${rx_pin}
-baud_rate: ${baud_rate} # The out-of-box baud rate for my particular sensor->RS485 bridge
+baud_rate: ${baud_rate}
 stop_bits: 1
 parity: NONE
 data_bits: 8
@@ -13,80 +12,138 @@ debug:
     timeout: 100ms
   sequence:
     - lambda: |-
-        static std::vector<uint8_t> checkData = {0xaa, 0xc0, 0x00, 0x00, 0x00, 0x00};
-        static const char *const TAG = "uart_debug";
-        static uint8_t separator = ' ';
-        std::string res;
-        if (direction == UART_DIRECTION_RX) {
-          res += "<<< ";
-        } else {
-          res += ">>> ";
-        }
-        size_t len = bytes.size();
-        char buf[5];
-        for (size_t i = 0; i < len; i++) {
-          if (i > 0) {
-            res += separator;
-          }
-          sprintf(buf, "%02X", bytes[i]);
-          res += buf;
-        }
-        if (id(log_rs485_comms)) {
-          ESP_LOGI(TAG, "%s", res.c_str());
-        }
-
         if (direction == UART_DIRECTION_TX) {
+          if (bytes.size() != 16) {
+            ESP_LOGW("uart_debug", "Bad UART packet: bad size: %d", bytes.size());
+            return;
+          }
+
+          if (id(log_rs485_comms)) {
+            if (bytes[0x01] == 0xC0 || bytes[0x01] == 0xC4) {
+              // Frequently repeated query packets
+              ESP_LOGD(
+                "uart_debug",
+                ">>> "
+                "%02X %02X %02X %02X %02X %02X %02X %02X "
+                "%02X %02X %02X %02X %02X %02X %02X %02X",
+                bytes[0x00], bytes[0x01], bytes[0x02], bytes[0x03], bytes[0x04], bytes[0x05], bytes[0x06], bytes[0x07],
+                bytes[0x08], bytes[0x09], bytes[0x0A], bytes[0x0B], bytes[0x0C], bytes[0x0D], bytes[0x0E], bytes[0x0F]
+              );
+            } else {
+              ESP_LOGI(
+                "uart_debug",
+                ">>> "
+                "%02X %02X %02X %02X %02X %02X %02X %02X "
+                "%02X %02X %02X %02X %02X %02X %02X %02X",
+                bytes[0x00], bytes[0x01], bytes[0x02], bytes[0x03], bytes[0x04], bytes[0x05], bytes[0x06], bytes[0x07],
+                bytes[0x08], bytes[0x09], bytes[0x0A], bytes[0x0B], bytes[0x0C], bytes[0x0D], bytes[0x0E], bytes[0x0F]
+              );
+            }
+          }
+
+          // Ignore packets we're sending
           return;
         }
-        
-        if (id(command_sent)) {
-          // turn off command_sent flag so we know we can resume queries
-          id(command_sent)=false;
-        } else if (id(new_input)){
-          // do nothing if there is new input so we don't overwrite whatever the user did
-        } else {
-          // C4 queries are for setpoints (in F only) and T4 temps
-          if (bytes[1] == 0xC4) 
-          {
-            id(t4_temp).publish_state((bytes[21] - 0x28) / 2.0);
-            // sometimes this temporarily gives erroneous values before correcting itself, ignore them
-            if (id(use_fahrenheit))
-            {
-              if (bytes[18] > 0x87 && bytes[18] < 215) {
-                id(set_temp) = bytes[18] - 0x87;
-              }
-            }
-            
-            id(first_boot) = false;
+
+        if (bytes.size() != 32) {
+          ESP_LOGW("uart_debug", "Bad UART packet: bad size: %d", bytes.size());
+          return;
+        }
+
+        if (id(log_rs485_comms)) {
+          if (bytes[0x01] == 0xC0 || bytes[0x01] == 0xC4) {
+            // Frequently repeated query packets
+            ESP_LOGD(
+              "uart_debug",
+              "<<< "
+              "%02X %02X %02X %02X %02X %02X %02X %02X "
+              "%02X %02X %02X %02X %02X %02X %02X %02X "
+              "%02X %02X %02X %02X %02X %02X %02X %02X "
+              "%02X %02X %02X %02X %02X %02X %02X %02X",
+              bytes[0x00], bytes[0x01], bytes[0x02], bytes[0x03], bytes[0x04], bytes[0x05], bytes[0x06], bytes[0x07],
+              bytes[0x08], bytes[0x09], bytes[0x0A], bytes[0x0B], bytes[0x0C], bytes[0x0D], bytes[0x0E], bytes[0x0F],
+              bytes[0x10], bytes[0x11], bytes[0x12], bytes[0x13], bytes[0x14], bytes[0x15], bytes[0x16], bytes[0x17],
+              bytes[0x18], bytes[0x19], bytes[0x1A], bytes[0x1B], bytes[0x1C], bytes[0x1D], bytes[0x1E], bytes[0x1F]
+            );
+          } else {
+            ESP_LOGI(
+              "uart_debug",
+              "<<< "
+              "%02X %02X %02X %02X %02X %02X %02X %02X "
+              "%02X %02X %02X %02X %02X %02X %02X %02X "
+              "%02X %02X %02X %02X %02X %02X %02X %02X "
+              "%02X %02X %02X %02X %02X %02X %02X %02X",
+              bytes[0x00], bytes[0x01], bytes[0x02], bytes[0x03], bytes[0x04], bytes[0x05], bytes[0x06], bytes[0x07],
+              bytes[0x08], bytes[0x09], bytes[0x0A], bytes[0x0B], bytes[0x0C], bytes[0x0D], bytes[0x0E], bytes[0x0F],
+              bytes[0x10], bytes[0x11], bytes[0x12], bytes[0x13], bytes[0x14], bytes[0x15], bytes[0x16], bytes[0x17],
+              bytes[0x18], bytes[0x19], bytes[0x1A], bytes[0x1B], bytes[0x1C], bytes[0x1D], bytes[0x1E], bytes[0x1F]
+            );
+          }
+        }
+
+        // Verification
+
+        {
+          if (bytes[0x00] != 0xAA) {
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x00): bad preamble: %02X", bytes[0x00]);
             return;
           }
-          
-          // C6 is the follow me update. we don't do anything with the responses
-          if (bytes[1] == 0xC6) {
+          // bytes[0x01] is the command flag, to be handled below
+          if (bytes[0x02] != 0x00) {
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x02): unexpected direction flag: %02X", bytes[0x02]);
+            return;
+          }
+          if (bytes[0x03] != 0x00) {
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x03): unexpected destination: %02X", bytes[0x03]);
+            return;
+          }
+          if (bytes[0x04] != 0x00) {
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x04): unexpected source: %02X", bytes[0x04]);
+            return;
+          }
+          if (bytes[0x05] != bytes[0x03]) {
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x05): destination check vs. destination: %02X vs. %02X", bytes[0x05], bytes[0x03]);
             return;
           }
 
-          // what follows is the standard C0 query which captures most of the sensor data
-          bool theyMatch = true;
-          uint8_t i;
-          for (i=0;i<6;++i)
-          {
-            if (i != 1) {
-              if (bytes[i]!=checkData[i])
-              {
-                theyMatch = false;
-              }
-            }
-          }
-          if (theyMatch)
-          {
-            id(fan_bytes) = bytes[9];
-            id(op_bytes) = bytes[8];
-            id(mode_flag_bytes) = bytes[17];
+          // bytes[0x06] to bytes[0x1D] is the payload
 
-            // we only capture the celcius set point here, since it always comes back celcius no matter what mode the unit is in
-            if (!id(use_fahrenheit)) {
-              id(set_temp) = bytes[10];
+          uint32_t crc = 0;
+          for (size_t i = 0; i < bytes.size(); i++) {
+            if (i == 0x1E) {
+              continue; // skip CRC byte
+            }
+            crc += bytes[i];
+          }
+          crc = ~crc;
+          if (bytes[0x1E] != static_cast<uint8_t>(crc)) {
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x1E): CRC vs. expected: %02X vs. %02X", bytes[0x1E], static_cast<uint8_t>(crc));
+            return;
+          }
+
+          if (bytes[0x1F] != 0x55) {
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x1F): bad prologue: %02X", bytes[0x1F]);
+            return;
+          }
+        }
+
+        // Message handling
+
+        switch (bytes[0x01]) {
+          // Query
+          case 0xC0: {
+            // Don't overwrite pending control state which hasn't been sent yet.
+            if (!id(new_input)) {
+              id(op_bytes) = bytes[8];
+              id(fan_bytes) = bytes[9];
+              id(mode_flag_bytes) = bytes[17];
+
+              // we only capture the celcius set point here, since it always comes back celcius no matter what mode the unit is in
+              if (!id(use_fahrenheit)) {
+                // For some reason, this does not use the 0.5C encoding, even though you can set the unit to 0.5C increments using the remote.
+                // Sometimes, the 0x40 bit is set though, which has unclear meaning.
+                id(set_temp) = bytes[10] & ~0x40;
+              }
             }
 
             // these sensors are offset by 0x28 and in units of 0.5C regardless of what mode the unit is in
@@ -102,8 +159,41 @@ debug:
 
             // error codes. TODO: could use some more investigation
             id(error_codes).publish_state({"E1: " + std::to_string(bytes[23]) + " E2: " + std::to_string(bytes[24])});
-          } else 
-          {
-            ESP_LOGI("custom","First 6 bytes of incoming data were bad, not using values");
+
+            break;
+          }
+
+          // Set
+          case 0xC3: {
+            // Ignore
+            break;
+          }
+
+          // Extended query
+          case 0xC4: {
+            id(t4_temp).publish_state((bytes[0x15] - 0x28) / 2.0);
+
+            if (id(use_fahrenheit))
+            {
+              // sometimes this temporarily gives erroneous values before correcting itself, ignore them
+              if (bytes[18] > 0x87 && bytes[18] < 215) {
+                id(set_temp) = bytes[18] - 0x87;
+              }
+            }
+
+            id(first_boot) = false;
+
+            break;
+          }
+
+          // Extended set (follow me)
+          case 0xC6: {
+            // Ignore
+            break;
+          }
+
+          default: {
+            ESP_LOGW("uart_debug", "Unknown command: %02X", bytes[0x01]);
+            return;
           }
         }

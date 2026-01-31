@@ -76,7 +76,6 @@ The device that is created will have the following entities:
 | **baud_rate** | int | `4800` | Baud rate--shouldn't need to change this |
 | **use_fahrenheit** | bool | `true` | Whether to use F or C for the set point. Note that all other values will always be reported in C. You may need to set the set point again after changing this |
 | **follow_me_timeout** | int | `7200` | Time in seconds after which to disable follow me if you have not updated the temperature. This is to prevent locking the system on or off if home assistant goes offline |
-| **follow_me_interval** | int | `30` | Time in seconds between follow me update packets |
 | **log_rs485_comms** | bool | `true` | Whether or not to log the RS485 communications. If you need to submit logs with a bug report please keep this enabled |
 
 # How it works

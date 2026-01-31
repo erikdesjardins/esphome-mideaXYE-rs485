@@ -1,109 +1,151 @@
-- interval: 1.5s
-  startup_delay: 20s
+# Send commands every 150ms if we have any queued up.
+# Per RE info, real controllers poll devices every 130ms, ~30ms for sending and 100ms for receiving.
+# We use 150ms to give a bit of extra buffer.
+- interval: 150ms
   then:
-    if:
-      condition:
-        lambda: 'return !id(command_sent) && !id(new_input);'
-      then:
-        - uart.write: !lambda |-
-            enum PacketType {
-              INIT,
-              UPDATE,
-              STOP
-            };
-            static std::vector<uint8_t> queryData = {0xaa, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3F, 0x01, 0x55};
-            static std::vector<uint8_t> queryDataC4 = {0xAA, 0xC4, 0x00, 0x00, 0x00, 0x00, 0xA5, 0x5A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3B, 0x02, 0x55};
-            static std::vector<uint8_t> followMeData = {0xaa, 0xc6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x39, 0x00, 0x55};
-            
-            // if we havent sent a follow me packet in the last `follow_me_interval` seconds and the unit is not off, send follow me packet
-            if (id(uptime_sensor).state - id(last_follow_me_send_time) >= ${follow_me_interval} && id(op_bytes) != 0x00) {
-              PacketType packet = INIT;
-              double followMeTemp = id(follow_me_temp).state;
+    - if:
+        condition:
+          lambda: 'return id(send_queue_len) > 0;'
+        then:
+          - uart.write: !lambda |-
+              std::vector<uint8_t> message = {id(send_queue)[0].begin(), id(send_queue)[0].end()};
 
-              if (id(follow_me).state)
-              {
-                if (id(follow_me_init))
-                {
-                  // if we are initialized, send the update packet
-                  followMeData[10] = id(use_fahrenheit) ? 0x42 : 0x2;
-                  packet = UPDATE;
-                } else 
-                {
-                  // send the initialization packet
-                  followMeData[10] = id(use_fahrenheit) ? 0x46 : 0x6;
-                  id(follow_me_init) = true;
-                  packet = INIT;
-                }
-              } else 
-              {
-                if (id(follow_me_init)) 
-                {
-                  // turn off follow me and instruct unit to go back to its internal temperature sensor
-                  followMeData[10] = id(use_fahrenheit) ? 0x44 : 0x4;
-                  id(follow_me_init) = false;
-                  packet = STOP;
-                } else {
-                  goto skip_follow_me;
-                }
+              // shift the queue down
+              for (size_t i = 1; i < id(send_queue_len); i++) {
+                id(send_queue)[i - 1] = id(send_queue)[i];
               }
+              id(send_queue_len)--;
 
-              followMeData[11] = static_cast<uint8_t>(std::floor(followMeTemp));
+              return message;
 
-              switch(packet) {
-                case INIT:
-                  ESP_LOGI("follow_me","Sending follow me initialization packet with temp of %iC",followMeData[11]);
-                  break;
-                case UPDATE:
-                  ESP_LOGI("follow_me","Sending follow me update packet with temp of %iC",followMeData[11]);
-                  break;
-                case STOP:
-                  ESP_LOGI("follow_me","Sending follow me stop packet--the T1 temp should revert to its internal sensor now");
-                  break;
-              }
-
-              // compute CRC
-              uint8_t i=0;
-              uint32_t crc=0;
-              int len=16;
-              for(i=0;i<len;i++)
-              { 
-                if(i!=14)
-                {
-                  crc+=followMeData[i];
-                }
-              }
-              followMeData[14] = 0xFF - (crc&0xFF);
-              
-              // update last sent time
-              id(last_follow_me_send_time) = static_cast<uint32_t>(id(uptime_sensor).state);
-
-              // implement timeout feature to prevent a stale value from keeping the unit stuck on or off
-              if (id(uptime_sensor).state - id(last_follow_me_update) > ${follow_me_timeout}) {
-                id(follow_me).turn_off();
-              }
-              return followMeData;
-            }
-            
-            // alternate between C0 and C4 queries to keep our sensors up to date
-            skip_follow_me:
-            if (id(alternate_query)) 
-            {
-              id(alternate_query) = false;
-              return queryDataC4;
-            } else 
-            {
-              id(alternate_query) = true;
-              return queryData;
-            }
-
-
-- interval: 3s
-  startup_delay: 10s
+# Send control updates (if any), follow me (every 30s), and update the status every second.
+- interval: 1s
   then:
-    - lambda: |-
-        // if we have new data to send, send the update packet
-        if (!id(first_boot) && id(new_input) && !id(command_sent)) {
-          id(send_button).press();
-          id(new_input) = false;
-          id(command_sent) = true;
+    lambda: !lambda |-
+      struct payload {
+        uint8_t _0x01;
+        uint8_t _0x06;
+        uint8_t _0x07;
+        uint8_t _0x08;
+        uint8_t _0x09;
+        uint8_t _0x0A;
+        uint8_t _0x0B;
+        uint8_t _0x0C;
+      };
+      auto enqueue_send = [](payload x) {
+        if (id(send_queue_len) >= id(send_queue).size()) {
+          ESP_LOGW("custom", "Send queue full, dropping command %02X", x._0x01);
+          return;
         }
+
+        // For RE info, see:
+        // https://codeberg.org/xye/xye
+        // https://github.com/HomeOps/ESPHome-Midea-XYE/blob/92957c08c002185e7125be8da501617b3db5167c/esphome/components/midea_xye/PROTOCOL.md
+        auto& message = id(send_queue)[id(send_queue_len)];
+        message[0x00] = 0xAA;     // Preamble (0xAA)
+        message[0x01] = x._0x01;  // Commmand
+        message[0x02] = 0x00;     // Destination ID (0x00-0x3F device id, 0xFF broadcast)
+        message[0x03] = 0x00;     // Source ID (0x00-0x3F device id)
+        message[0x04] = 0x00;     // From Master (0x80) [Note: my unit does not respond unless this is 0x00]
+        message[0x05] = 0x00;     // Source ID (0x00-0x3F device id)
+        message[0x06] = x._0x06;  // Payload
+        message[0x07] = x._0x07;  // Payload
+        message[0x08] = x._0x08;  // Payload
+        message[0x09] = x._0x09;  // Payload
+        message[0x0A] = x._0x0A;  // Payload
+        message[0x0B] = x._0x0B;  // Payload
+        message[0x0C] = x._0x0C;  // Payload
+        message[0x0D] = ~x._0x01; // Command check
+        message[0x0E] = 0x00;     // CRC (to be calculated)
+        message[0x0F] = 0x55;     // Prologue (0x55)
+
+        uint32_t crc = 0;
+        for (uint8_t x : message) {
+          crc += x;
+        }
+        message[0x0E] = static_cast<uint8_t>(~crc);
+
+        id(send_queue_len)++;
+      };
+
+      // NOTE: message ordering here is important.
+      // For example, if mode is switched on at the same time as follow me is enabled,
+      // we need to send the control update first, since follow me is invalidated on mode change.
+
+      // Send control updates (but not on first boot)
+      if (!id(first_boot) && id(new_input)) {
+        id(new_input) = false;
+
+        uint8_t encoded_temp;
+        if (id(use_fahrenheit)) {
+          encoded_temp = static_cast<uint8_t>(std::round(id(set_temp))) + 0x87;
+        } else {
+          // Bizarrely, the set temp is in integer C, even though everything else is in 0.5C increments.
+          // When set to 0.5C via the remote, the reported temperature is floored in C0 responses, so do the same here.
+          encoded_temp = static_cast<uint8_t>(std::floor(id(set_temp)));
+        }
+
+        enqueue_send({
+          ._0x01 = 0xC3,
+          ._0x06 = id(op_bytes),
+          ._0x07 = id(fan_bytes),
+          ._0x08 = encoded_temp,
+          ._0x09 = id(mode_flag_bytes),
+        });
+      }
+
+      // Send follow me updates (but not on first boot)
+      if (!id(first_boot) && id(uptime_sensor).state - id(last_follow_me_message) > 30) {
+        id(last_follow_me_message) = static_cast<uint32_t>(id(uptime_sensor).state);
+
+        do {
+          // If the unit is off, do not send follow me packets
+          if (id(op_bytes) == 0x00) {
+            break;
+          }
+
+          // If we hit the timeout without an update, turn off follow me
+          if (id(follow_me).state && id(uptime_sensor).state - id(last_follow_me_update) > ${follow_me_timeout}) {
+            ESP_LOGW("custom", "Follow Me timeout reached, disabling Follow Me");
+            id(follow_me).turn_off();
+          }
+
+          uint8_t follow_me_cmd;
+          if (id(follow_me).state) {
+            if (!id(unit_follow_me_init)) {
+              // 1. Follow me enabled but not initialized: send initialization packet
+              id(unit_follow_me_init) = true;
+              follow_me_cmd = id(use_fahrenheit) ? 0x46 : 0x6;
+            } else {
+              // 2. Follow me already initialized: send update packet
+              follow_me_cmd = id(use_fahrenheit) ? 0x42 : 0x2;
+            }
+          } else {
+            if (id(unit_follow_me_init)) {
+              // 3. Follow me disabled but was initialized: send stop packet
+              id(unit_follow_me_init) = false;
+              follow_me_cmd = id(use_fahrenheit) ? 0x44 : 0x4;
+            } else {
+              // 4. Follow me disabled and not initialized: do nothing
+              break;
+            }
+          }
+
+          // Send C6 query for follow me
+          enqueue_send({
+            ._0x01 = 0xC6,
+            ._0x0A = follow_me_cmd,
+            ._0x0B = static_cast<uint8_t>(std::floor(id(follow_me_temp).state)),
+          });
+        } while (0);
+      }
+
+      // Send C0 query for basic info (payload all zero)
+      enqueue_send({
+        ._0x01 = 0xC0
+      });
+
+      // Send C4 query for extended info (payload all zero)
+      enqueue_send({
+        ._0x01 = 0xC4
+      });

@@ -9,14 +9,14 @@
   device_class: temperature
   update_interval: 1s
   lambda: |-
-      return static_cast<int>(id(set_temp));
+      return id(set_temp);
   set_action:
     - lambda: |-
         if (id(first_boot)) 
         {
           return;
         }
-        id(set_temp) = static_cast<int>(x);
+        id(set_temp) = static_cast<uint8_t>(x);
         id(new_input) = true;
 
 # don't change this to F. You can display it in F in the home assistant UI, which will allow you to update the temp in F

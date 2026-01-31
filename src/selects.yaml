@@ -101,7 +101,7 @@
         }
         if (id(op) != x)
         {
-          id(follow_me_init) = false;
+          id(unit_follow_me_init) = false;
           id(op) = x;
           if (id(op) == "off"){
             id(op_bytes) = 0x00;

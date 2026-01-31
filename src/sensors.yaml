@@ -7,9 +7,8 @@
 
 # dont change any of these temps to be F. They are always reported in C. If you want to display them in F, you can change the temperature unit in the home assistant UI
 
-# T1 temp is either the return air or the follow me temp. When you toggle follow me this value should be replaced by the follow me value
 - platform: template
-  name: "T1 Inlet/Room Temp"
+  name: "T1 Room Temp"
   unit_of_measurement: "°C"
   id: t1_temp
   update_interval: 1s

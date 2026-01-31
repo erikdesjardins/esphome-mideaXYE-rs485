@@ -1,43 +1,53 @@
-- id: set_temp
-  type: int
-  initial_value: '0'
-- id: new_input
-  type: bool
-  initial_value: 'false'
-- id: command_sent
-  type: bool
-  initial_value: 'false'
-- id: first_boot
-  type: bool
-  initial_value: 'true'
-- id: follow_me_init
-  type: bool
-  initial_value: 'false'
-- id: alternate_query
-  type: bool
-  initial_value: 'false'
-- id: fan_bytes
-  type: uint8_t
-  initial_value: "0"
-- id: op_bytes
-  type: uint8_t
-  initial_value: "0"
-- id: mode_flag_bytes
-  type: uint8_t
-  initial_value: "0"
-- id: op
-  type: std::string
-- id: fan
-  type: std::string
-- id: last_follow_me_update
-  type: uint32_t
-  initial_value: "0"
-- id: last_follow_me_send_time
-  type: uint32_t
-  initial_value: "0"
+### Config options
+
 - id: use_fahrenheit
   type: bool
   initial_value: "${'true' if use_fahrenheit == true else 'false'}"
 - id: log_rs485_comms
   type: bool
   initial_value: "${'true' if log_rs485_comms == true else 'false'}"
+
+### Unit state
+
+- id: set_temp
+  type: uint8_t
+
+- id: fan_bytes
+  type: uint8_t
+
+- id: op_bytes
+  type: uint8_t
+
+- id: mode_flag_bytes
+  type: uint8_t
+
+- id: unit_follow_me_init
+  type: bool
+  initial_value: 'false'
+
+### Internal state
+
+- id: first_boot
+  type: bool
+  initial_value: 'true'
+
+- id: new_input
+  type: bool
+  initial_value: 'false'
+
+- id: last_follow_me_message
+  type: uint32_t
+- id: last_follow_me_update
+  type: uint32_t
+
+- id: op
+  type: std::string
+- id: fan
+  type: std::string
+
+# Message send queue
+- id: send_queue
+  # In practice, up to 4 messages can be in flight: set, query, extended query, follow me
+  type: std::array<std::array<uint8_t, 16>, 4>
+- id: send_queue_len
+  type: uint8_t
