@@ -5,6 +5,13 @@
   device_class: temperature
   state_class: measurement
 
+- platform: uptime
+  id: uptime_sensor
+  name: "Uptime Sensor"
+  type: seconds
+  update_interval: 1s
+  internal: true
+
 # dont change any of these temps to be F. They are always reported in C. If you want to display them in F, you can change the temperature unit in the home assistant UI
 
 - platform: template
@@ -42,10 +49,3 @@
   unit_of_measurement: "°C"
   device_class: temperature
   state_class: measurement
-
-- platform: uptime
-  id: uptime_sensor
-  name: "Uptime Sensor"
-  type: seconds
-  update_interval: 1s
-  internal: true

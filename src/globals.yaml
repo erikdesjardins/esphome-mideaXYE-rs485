@@ -11,13 +11,11 @@
 
 - id: unit_follow_me_init
   type: bool
-  initial_value: 'false'
 
 ### Internal state
 
 - id: new_input
   type: bool
-  initial_value: 'false'
 
 - id: last_follow_me_message
   type: uint32_t

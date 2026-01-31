@@ -1,5 +1,5 @@
 - platform: template
-  name: "Follow Me"
   id: follow_me
+  name: "Follow Me"
   optimistic: true
   restore_mode: RESTORE_DEFAULT_OFF

@@ -1,6 +1,6 @@
 - platform: template
-  name: "Set Point"
   id: set_temp
+  name: "Set Point"
   step: 1
   mode: box
   min_value: 0
@@ -14,8 +14,8 @@
 
 # don't change this to F. You can display it in F in the home assistant UI, which will allow you to update the temp in F
 - platform: template
-  name: "Follow Me Temp"
   id: follow_me_temp
+  name: "Follow Me Temp"
   step: 0.1
   mode: box
   min_value: 0
