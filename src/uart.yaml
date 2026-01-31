@@ -34,7 +34,6 @@ debug:
         if (id(log_rs485_comms)) {
           ESP_LOGI(TAG, "%s", res.c_str());
         }
-        delay(10);
 
         if (direction == UART_DIRECTION_TX) {
           return;
