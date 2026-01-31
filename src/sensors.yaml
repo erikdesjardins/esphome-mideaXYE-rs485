@@ -1,50 +1,45 @@
 # internal temp of esp device
 - platform: internal_temperature
   name: "Internal Temperature"
-  state_class: measurement
-  device_class: temperature
   unit_of_measurement: "°C"
+  device_class: temperature
+  state_class: measurement
 
 # dont change any of these temps to be F. They are always reported in C. If you want to display them in F, you can change the temperature unit in the home assistant UI
 
 - platform: template
+  id: t1_temp
   name: "T1 Room Temp"
   unit_of_measurement: "°C"
-  id: t1_temp
-  update_interval: 1s
   device_class: temperature
   state_class: measurement
 
 # Indoor coil. A appears to be the temp prior to air passing over the coil while B is the temp before  
 - platform: template
-  name: "T2A Indoor Coil Temp A"
   id: t2a_temp
+  name: "T2A Indoor Coil Temp A"
   unit_of_measurement: "°C"
-  update_interval: 1s
   device_class: temperature
   state_class: measurement
 
 - platform: template
-  name: "T2B Indoor Coil Temp B"
   id: t2b_temp
+  name: "T2B Indoor Coil Temp B"
   unit_of_measurement: "°C"
-  update_interval: 1s
   device_class: temperature
   state_class: measurement
 
 - platform: template
-  name: "T3 Outdoor Coil Temp"
   id: t3_temp
+  name: "T3 Outdoor Coil Temp"
   unit_of_measurement: "°C"
-  update_interval: 1s
   device_class: temperature
   state_class: measurement
 
 - platform: template
-  name: "T4 Outdoor Temp"
   id: t4_temp
+  name: "T4 Outdoor Temp"
   unit_of_measurement: "°C"
-  update_interval: 1s
   device_class: temperature
   state_class: measurement
 
