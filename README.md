@@ -54,7 +54,7 @@ The device that is created will have the following entities:
 | -------- | -------- | -------- |
 | **Fan Mode** | Select | Select the fan mode |
 | **Follow Me** | Button | Tell the unit what the current indoor temperature is. Used in conjunction with the Follow Me Temp entity |
-| **Follow Me Temp** | Number | The temperature we should pass to the indoor unit. Note that by default it is rounded up or down to minimize short cycling since it can only be sent in increments of 1C. You can disable this with the `smart_rounding` configuration variable |
+| **Follow Me Temp** | Number | The temperature we should pass to the indoor unit. |
 | **Operating Mode** | Select | Select the operating mode of the unit |
 | **Set Point** | Number | The set point of the HVAC system |
 | **Compressor status** | Binary Sensor | Whether the outdoor unit is on or off |
@@ -76,7 +76,6 @@ The device that is created will have the following entities:
 | **tx_pin** | GPIO Pin | N/A | TX pin for your RS485 Transceiver |
 | **baud_rate** | int | `4800` | Baud rate--shouldn't need to change this |
 | **use_fahrenheit** | bool | `true` | Whether to use F or C for the set point. Note that all other values will always be reported in C. You may need to set the set point again after changing this |
-| **smart_rounding** | bool | `true` | Whether to round the follow me temp differently depending on if the compressor is on or off to lengthen cycles. If you want regular rounding, disable this |
 | **follow_me_timeout** | int | `7200` | Time in seconds after which to disable follow me if you have not updated the temperature. This is to prevent locking the system on or off if home assistant goes offline |
 | **follow_me_interval** | int | `30` | Time in seconds between follow me update packets |
 | **log_rs485_comms** | bool | `true` | Whether or not to log the RS485 communications. If you need to submit logs with a bug report please keep this enabled |

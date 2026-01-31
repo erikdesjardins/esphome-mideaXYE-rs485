@@ -80,10 +80,6 @@ debug:
           }
           if (theyMatch)
           {
-            if (id(compressor_status).state && !(bytes[19] & 0x01)) {
-              id(last_compressor_off_time) = static_cast<uint32_t>(id(uptime_sensor).state);
-            }
-
             id(fan_bytes) = bytes[9];
             id(op_bytes) = bytes[8];
             id(mode_flag_bytes) = bytes[17];

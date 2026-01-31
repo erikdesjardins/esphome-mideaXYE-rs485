@@ -46,42 +46,8 @@
                   goto skip_follow_me;
                 }
               }
-              
-              if (id(smart_rounding)) {
-                // true if compressor is on or has been off for less than 2m. this is to account for the compressor cycling during defrost
-                bool compressor_on = (id(uptime_sensor).state - id(last_compressor_off_time) < 120 && id(uptime_sensor).state > 120) || id(compressor_status).state;
-                uint8_t set_point = id(use_fahrenheit) ? ((id(set_temp) - 32.0) * (5.0 / 9.0)) : id(set_temp);
-                
-                switch(id(op_bytes)) {
-                  case 0x84: // heat
-                    if (fabs(set_point - followMeTemp) > 0.5) {
-                      followMeData[11] = static_cast<uint8_t>(std::round(followMeTemp));
-                      break;
-                    }
-                    if (compressor_on) {
-                      followMeData[11] = static_cast<uint8_t>(std::round(followMeTemp));
-                    } else {
-                      followMeData[11] = static_cast<uint8_t>(std::ceil(followMeTemp));
-                    }
-                    break;
-                  case 0x88: // cool
-                    if (fabs(set_point - followMeTemp) > 0.5) {
-                      followMeData[11] = static_cast<uint8_t>(std::round(followMeTemp));
-                      break;
-                    }
-                    if (compressor_on) {
-                      followMeData[11] = static_cast<uint8_t>(std::round(followMeTemp));
-                    } else {
-                      followMeData[11] = static_cast<uint8_t>(std::floor(followMeTemp));
-                    }
-                    break;
-                  default:
-                    followMeData[11] = static_cast<uint8_t>(std::round(followMeTemp));
-                    break;
-                }
-              } else {
-                followMeData[11] = static_cast<uint8_t>(std::round(followMeTemp));
-              }
+
+              followMeData[11] = static_cast<uint8_t>(std::floor(followMeTemp));
 
               switch(packet) {
                 case INIT:

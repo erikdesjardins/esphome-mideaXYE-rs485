@@ -1,7 +1,6 @@
 defaults:
   baud_rate: 4800
   use_fahrenheit: true
-  smart_rounding: true
   follow_me_timeout: 7200
   follow_me_interval: 30
   log_rs485_comms: true
