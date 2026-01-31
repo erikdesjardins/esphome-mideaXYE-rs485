@@ -7,7 +7,7 @@
   max_value: 100
   unit_of_measurement: "${'°F' if use_fahrenheit == true else '°C'}"
   device_class: temperature
-  optimistic: True
+  optimistic: true
   set_action:
     - lambda: |-
         id(new_input) = true;
@@ -22,8 +22,8 @@
   max_value: 100
   unit_of_measurement: "°C"
   device_class: temperature
-  optimistic: True
-  restore_value: True
+  optimistic: true
+  restore_value: true
   on_value: 
     - lambda: |-
         id(last_follow_me_update) = static_cast<uint32_t>(id(uptime_sensor).state);

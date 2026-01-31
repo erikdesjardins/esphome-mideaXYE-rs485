@@ -48,4 +48,4 @@
   name: "Uptime Sensor"
   type: seconds
   update_interval: 1s
-  internal: True
+  internal: true
