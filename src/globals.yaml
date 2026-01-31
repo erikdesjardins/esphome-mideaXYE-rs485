@@ -6,9 +6,6 @@
 
 ### Unit state
 
-- id: set_temp
-  type: uint8_t
-
 - id: fan_bytes
   type: uint8_t
 

@@ -87,7 +87,7 @@ debug:
               if (!id(use_fahrenheit)) {
                 // For some reason, this does not use the 0.5C encoding, even though you can set the unit to 0.5C increments using the remote.
                 // Sometimes, the 0x40 bit is set though, which has unclear meaning.
-                id(set_temp) = bytes[10] & ~0x40;
+                id(set_temp).publish_state(bytes[10] & ~0x40);
               }
             }
 
@@ -122,7 +122,7 @@ debug:
             {
               // sometimes this temporarily gives erroneous values before correcting itself, ignore them
               if (bytes[18] > 0x87 && bytes[18] < 215) {
-                id(set_temp) = bytes[18] - 0x87;
+                id(set_temp).publish_state(bytes[18] - 0x87);
               }
             }
 
