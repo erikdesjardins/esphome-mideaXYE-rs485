@@ -12,41 +12,17 @@
   lambda: |-
     switch (id(op_bytes))
     {
-      case 0x00:
-        id(op) = "off";
-        break;
-      case 0x91:
-        // this is the flag for heating while in auto
-        id(op) = "auto (idle)";
-        break;
-      case 0x98:
-        // this is the flag for cooling in auto mode
-        id(op) = "auto (cooling)";
-        break;
-      case 0x10:
-        // this is the flag for startup in auto mode
-        id(op) = "auto (15m startup)";
-        break;
-      case 0x94:
-        // this is the flag for idle in auto mode
-        id(op) = "auto (heating)";
-        break;
-      case 0x88:
-        id(op) = "cool";
-        break;
-      case 0x82:
-        id(op) = "dry";
-        break;
-      case 0x84:
-        id(op) = "heat";
-        break;
-      case 0x81:
-        id(op) = "fan_only";
-        break;
-      default:
-        id(op) = "off";
+      case 0x00: return {"off"};
+      case 0x10: return {"auto (15m startup)"};
+      case 0x91: return {"auto (heating)"};
+      case 0x98: return {"auto (cooling)"};
+      case 0x94: return {"auto (idle)"};
+      case 0x88: return {"cool"};
+      case 0x82: return {"dry"};
+      case 0x84: return {"heat"};
+      case 0x81: return {"fan_only"};
+      default: return {"off"};
     }
-    return id(op);
 
 - platform: template
   name: "Fan Mode"
@@ -54,28 +30,12 @@
   lambda: |-
     switch (id(fan_bytes))
     {
-      case 0x80:
-        id(fan) = "auto";
-        break;
-      case 0x81:
-        id(fan) = "auto (high)";
-        break;
-      case 0x82:
-        id(fan) = "auto (medium)";
-        break;
-      case 0x84:
-        id(fan) = "auto (low)";
-        break;
-      case 0x01:
-        id(fan) = "high";
-        break;
-      case 0x02:
-        id(fan) = "medium";
-        break;
-      case 0x04:
-        id(fan) = "low";
-        break;
-      default:
-        id(fan) = "auto";
+      case 0x80: return {"auto"};
+      case 0x81: return {"auto (high)"};
+      case 0x82: return {"auto (medium)"};
+      case 0x84: return {"auto (low)"};
+      case 0x01: return {"high"};
+      case 0x02: return {"medium"};
+      case 0x04: return {"low"};
+      default: return {"auto"};
     }
-    return id(fan);

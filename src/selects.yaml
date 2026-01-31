@@ -65,24 +65,16 @@
     - 'dry'
     - 'heat'
     - 'fan_only'
-    # need to add switch case for updating the value based off opBytes
   lambda: |-
     switch (id(op_bytes))
     {
       case 0x00:
         id(op) = "off";
         break;
-      case 0x91:
-        // this is the flag for heating while in auto
-        id(op) = "auto";
-        break;
-      case 0x98:
-        // this is the flag for cooling in auto mode
-        id(op) = "auto";
-        break;
-      case 0x10:
-      case 0x94:
-        // this is the flag for idle in auto mode
+      case 0x10: // startup in auto mode
+      case 0x91: // heating in auto mode
+      case 0x98: // cooling in auto mode
+      case 0x94: // idle in auto mode
         id(op) = "auto";
         break;
       case 0x88:
