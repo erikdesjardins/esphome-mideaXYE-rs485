@@ -10,6 +10,7 @@ debug:
   dummy_receiver: true
   after:
     bytes: 32
+    timeout: 100ms
   sequence:
     - lambda: |-
         static std::vector<uint8_t> checkData = {0xaa, 0xc0, 0x00, 0x00, 0x00, 0x00};
