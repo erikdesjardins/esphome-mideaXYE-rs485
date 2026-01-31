@@ -3,9 +3,6 @@
 - id: use_fahrenheit
   type: bool
   initial_value: "${'true' if use_fahrenheit == true else 'false'}"
-- id: log_rs485_comms
-  type: bool
-  initial_value: "${'true' if log_rs485_comms == true else 'false'}"
 
 ### Unit state
 

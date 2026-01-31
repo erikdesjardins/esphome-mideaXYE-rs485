@@ -12,78 +12,21 @@ debug:
     timeout: 100ms
   sequence:
     - lambda: |-
+        UARTDebug::log_hex(direction, bytes, ' ');
+
         if (direction == UART_DIRECTION_TX) {
-          if (bytes.size() != 16) {
-            ESP_LOGW("uart_debug", "Bad UART packet: bad size: %d", bytes.size());
-            return;
-          }
-
-          if (id(log_rs485_comms)) {
-            if (bytes[0x01] == 0xC0 || bytes[0x01] == 0xC4) {
-              // Frequently repeated query packets
-              ESP_LOGD(
-                "uart_debug",
-                ">>> "
-                "%02X %02X %02X %02X %02X %02X %02X %02X "
-                "%02X %02X %02X %02X %02X %02X %02X %02X",
-                bytes[0x00], bytes[0x01], bytes[0x02], bytes[0x03], bytes[0x04], bytes[0x05], bytes[0x06], bytes[0x07],
-                bytes[0x08], bytes[0x09], bytes[0x0A], bytes[0x0B], bytes[0x0C], bytes[0x0D], bytes[0x0E], bytes[0x0F]
-              );
-            } else {
-              ESP_LOGI(
-                "uart_debug",
-                ">>> "
-                "%02X %02X %02X %02X %02X %02X %02X %02X "
-                "%02X %02X %02X %02X %02X %02X %02X %02X",
-                bytes[0x00], bytes[0x01], bytes[0x02], bytes[0x03], bytes[0x04], bytes[0x05], bytes[0x06], bytes[0x07],
-                bytes[0x08], bytes[0x09], bytes[0x0A], bytes[0x0B], bytes[0x0C], bytes[0x0D], bytes[0x0E], bytes[0x0F]
-              );
-            }
-          }
-
           // Ignore packets we're sending
           return;
-        }
-
-        if (bytes.size() != 32) {
-          ESP_LOGW("uart_debug", "Bad UART packet: bad size: %d", bytes.size());
-          return;
-        }
-
-        if (id(log_rs485_comms)) {
-          if (bytes[0x01] == 0xC0 || bytes[0x01] == 0xC4) {
-            // Frequently repeated query packets
-            ESP_LOGD(
-              "uart_debug",
-              "<<< "
-              "%02X %02X %02X %02X %02X %02X %02X %02X "
-              "%02X %02X %02X %02X %02X %02X %02X %02X "
-              "%02X %02X %02X %02X %02X %02X %02X %02X "
-              "%02X %02X %02X %02X %02X %02X %02X %02X",
-              bytes[0x00], bytes[0x01], bytes[0x02], bytes[0x03], bytes[0x04], bytes[0x05], bytes[0x06], bytes[0x07],
-              bytes[0x08], bytes[0x09], bytes[0x0A], bytes[0x0B], bytes[0x0C], bytes[0x0D], bytes[0x0E], bytes[0x0F],
-              bytes[0x10], bytes[0x11], bytes[0x12], bytes[0x13], bytes[0x14], bytes[0x15], bytes[0x16], bytes[0x17],
-              bytes[0x18], bytes[0x19], bytes[0x1A], bytes[0x1B], bytes[0x1C], bytes[0x1D], bytes[0x1E], bytes[0x1F]
-            );
-          } else {
-            ESP_LOGI(
-              "uart_debug",
-              "<<< "
-              "%02X %02X %02X %02X %02X %02X %02X %02X "
-              "%02X %02X %02X %02X %02X %02X %02X %02X "
-              "%02X %02X %02X %02X %02X %02X %02X %02X "
-              "%02X %02X %02X %02X %02X %02X %02X %02X",
-              bytes[0x00], bytes[0x01], bytes[0x02], bytes[0x03], bytes[0x04], bytes[0x05], bytes[0x06], bytes[0x07],
-              bytes[0x08], bytes[0x09], bytes[0x0A], bytes[0x0B], bytes[0x0C], bytes[0x0D], bytes[0x0E], bytes[0x0F],
-              bytes[0x10], bytes[0x11], bytes[0x12], bytes[0x13], bytes[0x14], bytes[0x15], bytes[0x16], bytes[0x17],
-              bytes[0x18], bytes[0x19], bytes[0x1A], bytes[0x1B], bytes[0x1C], bytes[0x1D], bytes[0x1E], bytes[0x1F]
-            );
-          }
         }
 
         // Verification
 
         {
+          if (bytes.size() != 32) {
+            ESP_LOGW("uart_debug", "Bad UART packet: bad size: %d", bytes.size());
+            return;
+          }
+
           if (bytes[0x00] != 0xAA) {
             ESP_LOGW("uart_debug", "Bad UART packet (byte 0x00): bad preamble: %02X", bytes[0x00]);
             return;

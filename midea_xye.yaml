@@ -2,7 +2,6 @@ defaults:
   baud_rate: 4800
   use_fahrenheit: true
   follow_me_timeout: 7200
-  log_rs485_comms: true
 
 globals: !include src/globals.yaml
 
