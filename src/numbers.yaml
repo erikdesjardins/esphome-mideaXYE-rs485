@@ -24,6 +24,6 @@
   device_class: temperature
   optimistic: true
   restore_value: true
-  on_value: 
+  set_action:
     - lambda: |-
         id(last_follow_me_update) = static_cast<uint32_t>(id(uptime_sensor).state);
