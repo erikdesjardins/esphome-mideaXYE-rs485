@@ -12,6 +12,10 @@ debug:
     timeout: 100ms
   sequence:
     - lambda: |-
+        static uint8_t last_c0_op_mode = 0x00;
+        static uint8_t last_c0_fan_mode = 0x00;
+        static uint8_t last_c0_set_temp = 0x00;
+
         if (direction == UART_DIRECTION_TX) {
           if (bytes.size() != 16) {
             ESP_LOGW("uart_debug", "Bad UART TX packet: bad size: %d", bytes.size());
@@ -153,10 +157,11 @@ debug:
                   break;
                 default:
                   op_mode_str = op_mode_detailed_str = "off";
-                  ESP_LOGW("custom", "Unknown op mode byte: %02X", bytes[0x08]);
+                  ESP_LOGW("custom", "C0 byte 0x08 (op mode) unknown value: %02X", bytes[0x08]);
               }
               id(op_mode).publish_state(op_mode_str);
               id(op_mode_detailed).publish_state(op_mode_detailed_str);
+              last_c0_op_mode = bytes[0x08];
 
               // Fan mode
               const char* fan_mode_str;
@@ -188,16 +193,21 @@ debug:
                   break;
                 default:
                   fan_mode_str = fan_mode_detailed_str = "auto";
-                  ESP_LOGW("custom", "Unknown fan mode byte: %02X", bytes[0x09]);
+                  ESP_LOGW("custom", "C0 byte 0x09 (fan mode) unknown value: %02X", bytes[0x09]);
               }
               id(fan_mode).publish_state(fan_mode_str);
               id(fan_mode_detailed).publish_state(fan_mode_detailed_str);
+              last_c0_fan_mode = bytes[0x09];
 
               if (!id(use_fahrenheit)) {
                 // For some reason, this does not use the 0.5C encoding, even though you can set the unit to 0.5C increments using the remote.
                 // Sometimes, the 0x40 bit is set though, which has unclear meaning.
                 id(set_temp).publish_state(bytes[0x0A] & ~0x40);
+                if ((bytes[0x0A] & 0x40) == 0x00) {
+                  ESP_LOGW("custom", "C0 byte 0x0A (set temp) without 0x40 bit set: %02X (%d)", bytes[0x0A], bytes[0x0A]);
+                }
               }
+              last_c0_set_temp = bytes[0x0A];
 
               const char* preset_mode_str;
               if (bytes[0x14] & 0x01) {
@@ -210,6 +220,17 @@ debug:
               bool vertical_swing_enabled = bytes[0x14] & 0x04;
               id(preset_mode).publish_state(preset_mode_str);
               id(vertical_swing).publish_state(vertical_swing_enabled);
+              if (bytes[0x14] & ~0x07) {
+                ESP_LOGW("custom", "C0 byte 0x14 (preset/swing) unknown bits set: %02X (unknown: %02X)", bytes[0x14], bytes[0x14] & ~0x07);
+              }
+            }
+
+            if (bytes[0x06] != 0x10) {
+              ESP_LOGW("custom", "C0 byte 0x06 (capabilities 1?) changed: %02X", bytes[0x06]);
+            }
+
+            if (bytes[0x07] != 0x30) {
+              ESP_LOGW("custom", "C0 byte 0x07 (capabilities 2?) changed: %02X", bytes[0x07]);
             }
 
             // these sensors are offset by 0x28 and in units of 0.5C regardless of what mode the unit is in
@@ -220,12 +241,38 @@ debug:
 
             id(current).publish_state(bytes[0x0F]);
 
+            if (bytes[0x10] != 0xFF) {
+              ESP_LOGW("custom", "C0 byte 0x10 (frequency) changed: %02X", bytes[0x10]);
+            }
+
+            // bytes[0x11] is timer start, ignoring since it doesn't make sense to use it
+            // bytes[0x12] is timer stop, ignoring since it doesn't make sense to use it
+
             id(compressor_status).publish_state(bytes[0x13] & 0x01);
+            if (bytes[0x13] & ~0x01) {
+              ESP_LOGW("custom", "C0 byte 0x13 (status?) unknown bits set: %02X (unknown: %02X)", bytes[0x13], bytes[0x13] & ~0x01);
+            }
+
+            if (bytes[0x15] != 0x00) {
+              ESP_LOGW("custom", "C0 byte 0x15 (oper flags?) changed: %02X", bytes[0x15]);
+            }
 
             id(error_flags).publish_state(bytes[0x16] | (bytes[0x17] << 8));
 
             id(protect_flags).publish_state(bytes[0x18] | (bytes[0x19] << 8));
             id(defrost_status).publish_state(bytes[0x18] == 0x02);
+
+            if (bytes[0x1A] != 0x00) {
+              ESP_LOGW("custom", "C0 byte 0x1A (CCM comm error flags) changed: %02X", bytes[0x1A]);
+            }
+
+            if (bytes[0x1B] != 0xFF) {
+              ESP_LOGW("custom", "C0 byte 0x1B (unknown) changed: %02X", bytes[0x1B]);
+            }
+
+            if (bytes[0x1C] || bytes[0x1D]) {
+              ESP_LOGW("custom", "C0 bytes 0x1C-0x1D (reserved) changed: %02X %02X", bytes[0x1C], bytes[0x1D]);
+            }
 
             break;
           }
@@ -240,14 +287,76 @@ debug:
           // C4 - Extended Query
           ////////////////////////////////////////
           case 0xC4: {
-            id(t4_temp).publish_state((bytes[0x15] - 0x28) / 2.0);
+            if (bytes[0x06] != 0x05) {
+              ESP_LOGW("custom", "C4 byte 0x06 (unknown) changed: %02X", bytes[0x06]);
+            }
+
+            if (bytes[0x07] != 0x00) {
+              ESP_LOGW("custom", "C4 byte 0x07 (unknown) changed: %02X", bytes[0x07]);
+            }
+
+            if (bytes[0x08] != 0x02) {
+              ESP_LOGW("custom", "C4 byte 0x08 (unknown) changed: %02X", bytes[0x08]);
+            }
+
+            if (bytes[0x09] != 0x30) {
+              ESP_LOGW("custom", "C4 byte 0x09 (same as C0 0x07 capabilities?) changed: %02X", bytes[0x09]);
+            }
+
+            if (bytes[0x0A] != 0x0E) {
+              ESP_LOGW("custom", "C4 byte 0x0A (unknown) changed: %02X", bytes[0x0A]);
+            }
+
+            if (bytes[0x0B] || bytes[0x0C] || bytes[0x0D]) {
+              ESP_LOGW("custom", "C4 bytes 0x0B-0x0D (reserved?) changed: %02X %02X %02X", bytes[0x0B], bytes[0x0C], bytes[0x0D]);
+            }
+
+            if (bytes[0x0E] != 0x00) {
+              ESP_LOGW("custom", "C4 byte 0x0E (unknown) changed: %02X", bytes[0x0E]);
+            }
+
+            if (bytes[0x0F] != 0x00) {
+              ESP_LOGW("custom", "C4 byte 0x0F (aux heat flags?) changed: %02X", bytes[0x0F]);
+            }
+
+            if (bytes[0x10] != last_c0_op_mode) {
+              ESP_LOGW("custom", "C4 byte 0x10 (op mode?) changed vs. last C0: %02X (C0: %02X)", bytes[0x10], last_c0_op_mode);
+            }
+
+            if (bytes[0x11] != last_c0_fan_mode) {
+              ESP_LOGW("custom", "C4 byte 0x11 (fan mode?) changed vs. last C0: %02X (C0: %02X)", bytes[0x11], last_c0_fan_mode);
+            }
 
             if (id(use_fahrenheit))
             {
               // sometimes this temporarily gives erroneous values before correcting itself, ignore them
-              if (bytes[18] > 0x87 && bytes[18] < 215) {
-                id(set_temp).publish_state(bytes[18] - 0x87);
+              if (bytes[0x12] > 0x87 && bytes[0x12] < 215) {
+                id(set_temp).publish_state(bytes[0x12] - 0x87);
               }
+            }
+            if (bytes[0x12] != last_c0_set_temp) {
+              ESP_LOGW("custom", "C4 byte 0x12 (set temp) changed vs. last C0: %02X (C0: %02X)", bytes[0x12], last_c0_set_temp);
+            }
+
+            if (bytes[0x13] != 0xBC) {
+              ESP_LOGW("custom", "C4 byte 0x13 (unknown) changed: %02X", bytes[0x13]);
+            }
+
+            if (bytes[0x14] != 0xD6) {
+              ESP_LOGW("custom", "C4 byte 0x14 (unknown) changed: %02X", bytes[0x14]);
+            }
+
+            id(t4_temp).publish_state((bytes[0x15] - 0x28) / 2.0);
+
+            id(unknown_c4_byte_0x16).publish_state(bytes[0x16]);
+
+            if (bytes[0x17] || bytes[0x18] || bytes[0x19] || bytes[0x1A] || bytes[0x1B] || bytes[0x1C] || bytes[0x1D]) {
+              ESP_LOGW(
+                "custom",
+                "C4 bytes 0x17-0x1D (reserved?) changed: "
+                "%02X %02X %02X %02X %02X %02X %02X",
+                bytes[0x17], bytes[0x18], bytes[0x19], bytes[0x1A], bytes[0x1B], bytes[0x1C], bytes[0x1D]
+              );
             }
 
             break;
@@ -261,7 +370,7 @@ debug:
           }
 
           default: {
-            ESP_LOGW("uart_debug", "Unknown command: %02X", bytes[0x01]);
+            ESP_LOGW("custom", "Unknown command: %02X", bytes[0x01]);
             return;
           }
         }

@@ -66,3 +66,8 @@
   id: protect_flags
   name: "Protect Flags"
   state_class: measurement
+
+- platform: template
+  id: unknown_c4_byte_0x16
+  name: "Unknown C4 Byte 0x16"
+  state_class: measurement
