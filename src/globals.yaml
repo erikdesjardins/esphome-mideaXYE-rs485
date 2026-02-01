@@ -6,6 +6,9 @@
 
 ### State
 
+- id: fetched_initial_state
+  type: bool
+
 - id: new_input
   type: bool
 

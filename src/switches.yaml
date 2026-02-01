@@ -4,10 +4,14 @@
   optimistic: true
   turn_on_action:
     - lambda: |-
-        id(new_input) = true;
+        if (id(fetched_initial_state)) {
+          id(new_input) = true;
+        }
   turn_off_action:
     - lambda: |-
-        id(new_input) = true;
+        if (id(fetched_initial_state)) {
+          id(new_input) = true;
+        }
 
 - platform: template
   id: follow_me

@@ -10,7 +10,9 @@
   optimistic: true
   set_action:
     - lambda: |-
-        id(new_input) = true;
+        if (id(fetched_initial_state)) {
+          id(new_input) = true;
+        }
 
 # don't change this to F. You can display it in F in the home assistant UI, which will allow you to update the temp in F
 - platform: template

@@ -12,7 +12,9 @@
   optimistic: true
   set_action:
     - lambda: |-
-        id(new_input) = true;
+        if (id(fetched_initial_state)) {
+          id(new_input) = true;
+        }
 
         // Changing mode invalidates follow me
         id(unit_follow_me_init) = false;
@@ -29,7 +31,9 @@
   optimistic: true
   set_action:
     - lambda: |-
-        id(new_input) = true;
+        if (id(fetched_initial_state)) {
+          id(new_input) = true;
+        }
 
 - platform: template
   id: preset_mode
@@ -42,4 +46,6 @@
   optimistic: true
   set_action:
     - lambda: |-
-        id(new_input) = true;
+        if (id(fetched_initial_state)) {
+          id(new_input) = true;
+        }

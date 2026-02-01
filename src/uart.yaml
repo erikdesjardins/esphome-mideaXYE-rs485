@@ -114,6 +114,8 @@ debug:
           case 0xC0: {
             // Don't overwrite pending control state which hasn't been sent yet.
             if (!id(new_input)) {
+              id(fetched_initial_state) = true;
+
               // Operating mode
               const char* op_mode_str;
               const char* op_mode_detailed_str;
