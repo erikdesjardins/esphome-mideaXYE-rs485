@@ -79,35 +79,35 @@
       if (id(new_input)) {
         id(new_input) = false;
 
-        uint8_t op_bytes;
+        uint8_t op_byte;
         if (id(op_mode).current_option() == "off") {
-          op_bytes = 0x00;
+          op_byte = 0x00;
         } else if (id(op_mode).current_option() == "auto") {
-          op_bytes = 0x90;
+          op_byte = 0x90;
         } else if (id(op_mode).current_option() == "cool") {
-          op_bytes = 0x88;
+          op_byte = 0x88;
         } else if (id(op_mode).current_option() == "dry") {
-          op_bytes = 0x82;
+          op_byte = 0x82;
         } else if (id(op_mode).current_option() == "heat") {
-          op_bytes = 0x84;
+          op_byte = 0x84;
         } else if (id(op_mode).current_option() == "fan_only") {
-          op_bytes = 0x81;
+          op_byte = 0x81;
         } else {
-          op_bytes = 0x00;
+          op_byte = 0x00;
           ESP_LOGW("custom", "Defaulting to off, invalid op mode input: %s", id(op_mode).current_option().c_str());
         }
 
-        uint8_t fan_bytes;
+        uint8_t fan_byte;
         if (id(fan_mode).current_option() == "high") {
-          fan_bytes = 0x01;
+          fan_byte = 0x01;
         } else if (id(fan_mode).current_option() == "auto") {
-          fan_bytes = 0x80;
+          fan_byte = 0x80;
         } else if (id(fan_mode).current_option() == "medium") {
-          fan_bytes = 0x02;
+          fan_byte = 0x02;
         } else if (id(fan_mode).current_option() == "low") {
-          fan_bytes = 0x04;
+          fan_byte = 0x04;
         } else {
-          fan_bytes = 0x80;
+          fan_byte = 0x80;
           ESP_LOGW("custom", "Defaulting to auto, invalid fan input: %s", id(fan_mode).current_option().c_str());
         }
 
@@ -134,8 +134,8 @@
 
         enqueue_send({
           ._0x01 = 0xC3,
-          ._0x06 = op_bytes,
-          ._0x07 = fan_bytes,
+          ._0x06 = op_byte,
+          ._0x07 = fan_byte,
           ._0x08 = encoded_temp,
           ._0x0B = mode_byte,
         });
