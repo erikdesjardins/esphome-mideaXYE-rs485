@@ -1,4 +1,15 @@
 - platform: template
+  id: vertical_swing
+  name: "Vertical Swing"
+  optimistic: true
+  turn_on_action:
+    - lambda: |-
+        id(new_input) = true;
+  turn_off_action:
+    - lambda: |-
+        id(new_input) = true;
+
+- platform: template
   id: follow_me
   name: "Follow Me"
   optimistic: true

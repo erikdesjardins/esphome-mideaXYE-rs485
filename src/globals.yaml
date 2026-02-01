@@ -4,17 +4,12 @@
   type: bool
   initial_value: "${'true' if use_fahrenheit == true else 'false'}"
 
-### Unit state
-
-- id: mode_flag_bytes
-  type: uint8_t
-
-- id: unit_follow_me_init
-  type: bool
-
-### Internal state
+### State
 
 - id: new_input
+  type: bool
+
+- id: unit_follow_me_init
   type: bool
 
 - id: last_follow_me_message

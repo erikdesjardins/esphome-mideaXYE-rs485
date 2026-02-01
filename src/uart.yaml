@@ -84,7 +84,7 @@ debug:
               // Operating mode
               const char* op_mode_str;
               const char* op_mode_detailed_str;
-              switch (bytes[8]) {
+              switch (bytes[0x08]) {
                 case 0x00:
                   op_mode_str = op_mode_detailed_str = "off";
                   break;
@@ -118,7 +118,7 @@ debug:
                   break;
                 default:
                   op_mode_str = op_mode_detailed_str = "off";
-                  ESP_LOGW("custom", "Unknown op mode byte: %02X", bytes[8]);
+                  ESP_LOGW("custom", "Unknown op mode byte: %02X", bytes[0x08]);
               }
               id(op_mode).publish_state(op_mode_str);
               id(op_mode_detailed).publish_state(op_mode_detailed_str);
@@ -126,7 +126,7 @@ debug:
               // Fan mode
               const char* fan_mode_str;
               const char* fan_mode_detailed_str;
-              switch (bytes[9]) {
+              switch (bytes[0x09]) {
                 case 0x80:
                   fan_mode_str = fan_mode_detailed_str = "auto";
                   break;
@@ -153,34 +153,44 @@ debug:
                   break;
                 default:
                   fan_mode_str = fan_mode_detailed_str = "auto";
-                  ESP_LOGW("custom", "Unknown fan mode byte: %02X", bytes[9]);
+                  ESP_LOGW("custom", "Unknown fan mode byte: %02X", bytes[0x09]);
               }
               id(fan_mode).publish_state(fan_mode_str);
               id(fan_mode_detailed).publish_state(fan_mode_detailed_str);
 
-              id(mode_flag_bytes) = bytes[17];
-
-              // we only capture the celcius set point here, since it always comes back celcius no matter what mode the unit is in
               if (!id(use_fahrenheit)) {
                 // For some reason, this does not use the 0.5C encoding, even though you can set the unit to 0.5C increments using the remote.
                 // Sometimes, the 0x40 bit is set though, which has unclear meaning.
-                id(set_temp).publish_state(bytes[10] & ~0x40);
+                id(set_temp).publish_state(bytes[0x0A] & ~0x40);
               }
+
+              const char* preset_mode_str;
+              if (bytes[0x14] & 0x01) {
+                preset_mode_str = "sleep";
+              } else if (bytes[0x14] & 0x02) {
+                preset_mode_str = "boost";
+              } else {
+                preset_mode_str = "none";
+              }
+              bool vertical_swing_enabled = bytes[0x14] & 0x04;
+              id(preset_mode).publish_state(preset_mode_str);
+              id(vertical_swing).publish_state(vertical_swing_enabled);
             }
 
             // these sensors are offset by 0x28 and in units of 0.5C regardless of what mode the unit is in
-            id(t1_temp).publish_state((bytes[11] - 0x28) / 2.0);
-            id(t2a_temp).publish_state((bytes[12] - 0x28) / 2.0);
-            id(t2b_temp).publish_state((bytes[13] - 0x28) / 2.0);
-            id(t3_temp).publish_state((bytes[14] - 0x28) / 2.0);
+            id(t1_temp).publish_state((bytes[0x0B] - 0x28) / 2.0);
+            id(t2a_temp).publish_state((bytes[0x0C] - 0x28) / 2.0);
+            id(t2b_temp).publish_state((bytes[0x0D] - 0x28) / 2.0);
+            id(t3_temp).publish_state((bytes[0x0E] - 0x28) / 2.0);
 
-            // compressor status and defrost binary sensors. Defrost code may be different on other units, await user feedback
-            // byte 19 can apparently indicate outdoor fan and compressor on some units, hence the bitwise comparison for compressor only
-            id(compressor_status).publish_state(bytes[19] & 0x01);
-            id(defrost_status).publish_state(bytes[24] == 0x02);
+            id(current).publish_state(bytes[0x0F]);
 
-            // error codes. TODO: could use some more investigation
-            id(error_codes).publish_state({"E1: " + std::to_string(bytes[23]) + " E2: " + std::to_string(bytes[24])});
+            id(compressor_status).publish_state(bytes[0x13] & 0x01);
+
+            id(error_flags).publish_state(bytes[0x16] | (bytes[0x17] << 8));
+
+            id(protect_flags).publish_state(bytes[0x18] | (bytes[0x19] << 8));
+            id(defrost_status).publish_state(bytes[0x18] == 0x02);
 
             break;
           }

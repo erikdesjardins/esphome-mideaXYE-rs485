@@ -49,3 +49,20 @@
   unit_of_measurement: "°C"
   device_class: temperature
   state_class: measurement
+
+- platform: template
+  id: current
+  name: "Current Draw"
+  unit_of_measurement: "A"
+  device_class: current
+  state_class: measurement
+
+- platform: template
+  id: error_flags
+  name: "Error Flags"
+  state_class: measurement
+
+- platform: template
+  id: protect_flags
+  name: "Protect Flags"
+  state_class: measurement
