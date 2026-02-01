@@ -14,7 +14,6 @@
 
 - id: unit_follow_me_init
   type: bool
-
 - id: last_follow_me_message
   type: uint32_t
 - id: last_follow_me_update
