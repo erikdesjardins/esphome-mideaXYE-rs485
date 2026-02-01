@@ -156,7 +156,7 @@
 
           // If we hit the timeout without an update, turn off follow me
           if (id(follow_me).state && id(uptime_sensor).state - id(last_follow_me_update) > ${follow_me_timeout}) {
-            ESP_LOGW("custom", "Follow Me timeout reached, disabling Follow Me");
+            ESP_LOGW("custom", "Follow Me timeout (${follow_me_timeout}s) reached, disabling");
             id(follow_me).turn_off();
           }
 
