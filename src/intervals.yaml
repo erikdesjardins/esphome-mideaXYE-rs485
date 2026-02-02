@@ -98,10 +98,10 @@
         }
 
         uint8_t fan_byte;
-        if (id(fan_mode).current_option() == "high") {
-          fan_byte = 0x01;
-        } else if (id(fan_mode).current_option() == "auto") {
+        if (id(fan_mode).current_option() == "auto") {
           fan_byte = 0x80;
+        } else if (id(fan_mode).current_option() == "high") {
+          fan_byte = 0x01;
         } else if (id(fan_mode).current_option() == "medium") {
           fan_byte = 0x02;
         } else if (id(fan_mode).current_option() == "low") {
