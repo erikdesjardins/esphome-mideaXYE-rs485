@@ -22,7 +22,7 @@ debug:
             return;
           }
 
-          if (bytes[0x01] == 0xC0 || bytes[0x01] == 0xC4) {
+          if (bytes[0x01] == 0xC0 || bytes[0x01] == 0xC4 || bytes[0x01] == 0xC6) {
             UARTDebug::log_hex(direction, bytes, ' ');
           } else {
             ESP_LOGI(
@@ -44,7 +44,7 @@ debug:
           return;
         }
 
-        if (bytes[0x01] == 0xC0 || bytes[0x01] == 0xC4) {
+        if (bytes[0x01] == 0xC0 || bytes[0x01] == 0xC4 || bytes[0x01] == 0xC6) {
           UARTDebug::log_hex(direction, bytes, ' ');
         } else {
           ESP_LOGI(
