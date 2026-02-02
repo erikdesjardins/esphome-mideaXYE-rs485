@@ -347,8 +347,7 @@ debug:
             }
 
             id(t4_temp).publish_state((bytes[0x15] - 0x28) / 2.0);
-
-            id(unknown_c4_byte_0x16).publish_state(bytes[0x16]);
+            id(t5_temp).publish_state((bytes[0x16] - 0x28) / 2.0);
 
             if (bytes[0x17] || bytes[0x18] || bytes[0x19] || bytes[0x1A] || bytes[0x1B] || bytes[0x1C] || bytes[0x1D]) {
               ESP_LOGW(
