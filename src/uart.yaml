@@ -15,6 +15,7 @@ debug:
         static uint8_t last_c0_op_mode = 0x00;
         static uint8_t last_c0_fan_mode = 0x00;
         static uint8_t last_c0_set_temp = 0x00;
+        static bool last_c0_vertical_swing = false;
 
         if (direction == UART_DIRECTION_TX) {
           if (bytes.size() != 16) {
@@ -116,113 +117,9 @@ debug:
           // C0 - Query
           ////////////////////////////////////////
           case 0xC0: {
-            // Don't overwrite pending control state which hasn't been sent yet.
-            if (!id(new_input)) {
-              id(fetched_initial_state) = true;
-
-              // Operating mode
-              const char* op_mode_str;
-              const char* op_mode_detailed_str;
-              switch (bytes[0x08]) {
-                case 0x00:
-                  op_mode_str = op_mode_detailed_str = "off";
-                  break;
-                case 0x10:
-                  op_mode_str = "auto";
-                  op_mode_detailed_str = "auto (15m startup)";
-                  break;
-                case 0x91:
-                  op_mode_str = "auto";
-                  op_mode_detailed_str = "auto (heating)";
-                  break;
-                case 0x98:
-                  op_mode_str = "auto";
-                  op_mode_detailed_str = "auto (cooling)";
-                  break;
-                case 0x94:
-                  op_mode_str = "auto";
-                  op_mode_detailed_str = "auto (idle)";
-                  break;
-                case 0x88:
-                  op_mode_str = op_mode_detailed_str = "cool";
-                  break;
-                case 0x82:
-                  op_mode_str = op_mode_detailed_str = "dry";
-                  break;
-                case 0x84:
-                  op_mode_str = op_mode_detailed_str = "heat";
-                  break;
-                case 0x81:
-                  op_mode_str = op_mode_detailed_str = "fan_only";
-                  break;
-                default:
-                  op_mode_str = op_mode_detailed_str = "off";
-                  ESP_LOGW("custom", "C0 byte 0x08 (op mode) unknown value: %02X", bytes[0x08]);
-              }
-              id(op_mode).publish_state(op_mode_str);
-              id(op_mode_detailed).publish_state(op_mode_detailed_str);
-              last_c0_op_mode = bytes[0x08];
-
-              // Fan mode
-              const char* fan_mode_str;
-              const char* fan_mode_detailed_str;
-              switch (bytes[0x09]) {
-                case 0x80:
-                  fan_mode_str = fan_mode_detailed_str = "auto";
-                  break;
-                case 0x81:
-                  fan_mode_str = "auto";
-                  fan_mode_detailed_str = "auto (high)";
-                  break;
-                case 0x82:
-                  fan_mode_str = "auto";
-                  fan_mode_detailed_str = "auto (medium)";
-                  break;
-                case 0x84:
-                  fan_mode_str = "auto";
-                  fan_mode_detailed_str = "auto (low)";
-                  break;
-                case 0x01:
-                  fan_mode_str = fan_mode_detailed_str = "high";
-                  break;
-                case 0x02:
-                  fan_mode_str = fan_mode_detailed_str = "medium";
-                  break;
-                case 0x04:
-                  fan_mode_str = fan_mode_detailed_str = "low";
-                  break;
-                default:
-                  fan_mode_str = fan_mode_detailed_str = "auto";
-                  ESP_LOGW("custom", "C0 byte 0x09 (fan mode) unknown value: %02X", bytes[0x09]);
-              }
-              id(fan_mode).publish_state(fan_mode_str);
-              id(fan_mode_detailed).publish_state(fan_mode_detailed_str);
-              last_c0_fan_mode = bytes[0x09];
-
-              if (!id(use_fahrenheit)) {
-                // For some reason, this does not use the 0.5C encoding, even though you can set the unit to 0.5C increments using the remote.
-                // Sometimes, the 0x40 bit is set though, which has unclear meaning.
-                id(set_temp).publish_state(bytes[0x0A] & ~0x40);
-                if ((bytes[0x0A] & 0x40) == 0x00) {
-                  ESP_LOGW("custom", "C0 byte 0x0A (set temp) without 0x40 bit set: %02X (%d)", bytes[0x0A], bytes[0x0A]);
-                }
-              }
-              last_c0_set_temp = bytes[0x0A];
-
-              const char* preset_mode_str;
-              if (bytes[0x14] & 0x01) {
-                preset_mode_str = "sleep";
-              } else if (bytes[0x14] & 0x02) {
-                preset_mode_str = "boost";
-              } else {
-                preset_mode_str = "none";
-              }
-              bool vertical_swing_enabled = bytes[0x14] & 0x04;
-              id(preset_mode).publish_state(preset_mode_str);
-              id(vertical_swing).publish_state(vertical_swing_enabled);
-              if (bytes[0x14] & ~0x07) {
-                ESP_LOGW("custom", "C0 byte 0x14 (preset/swing) unknown bits set: %02X (unknown: %02X)", bytes[0x14], bytes[0x14] & ~0x07);
-              }
+            if (id(new_input)) {
+              // Don't overwrite pending control state which hasn't been sent yet.
+              break;
             }
 
             if (bytes[0x06] != 0x10) {
@@ -231,6 +128,96 @@ debug:
 
             if (bytes[0x07] != 0x30) {
               ESP_LOGW("custom", "C0 byte 0x07 (capabilities 2?) changed: %02X", bytes[0x07]);
+            }
+
+            // Operating mode
+            const char* op_mode_str;
+            const char* op_mode_detailed_str;
+            switch (bytes[0x08]) {
+              case 0x00:
+                op_mode_str = op_mode_detailed_str = "off";
+                break;
+              case 0x10:
+                op_mode_str = "auto";
+                op_mode_detailed_str = "auto (15m startup)";
+                break;
+              case 0x91:
+                op_mode_str = "auto";
+                op_mode_detailed_str = "auto (heating)";
+                break;
+              case 0x98:
+                op_mode_str = "auto";
+                op_mode_detailed_str = "auto (cooling)";
+                break;
+              case 0x94:
+                op_mode_str = "auto";
+                op_mode_detailed_str = "auto (idle)";
+                break;
+              case 0x88:
+                op_mode_str = op_mode_detailed_str = "cool";
+                break;
+              case 0x82:
+                op_mode_str = op_mode_detailed_str = "dry";
+                break;
+              case 0x84:
+                op_mode_str = op_mode_detailed_str = "heat";
+                break;
+              case 0x81:
+                op_mode_str = op_mode_detailed_str = "fan_only";
+                break;
+              default:
+                op_mode_str = op_mode_detailed_str = "off";
+                ESP_LOGW("custom", "C0 byte 0x08 (op mode) unknown value: %02X", bytes[0x08]);
+            }
+            id(op_mode).publish_state(op_mode_str);
+            id(op_mode_detailed).publish_state(op_mode_detailed_str);
+            last_c0_op_mode = bytes[0x08];
+
+            // Fan mode
+            const char* fan_mode_str;
+            const char* fan_mode_detailed_str;
+            switch (bytes[0x09]) {
+              case 0x80:
+                fan_mode_str = fan_mode_detailed_str = "auto";
+                break;
+              case 0x81:
+                fan_mode_str = "auto";
+                fan_mode_detailed_str = "auto (high)";
+                break;
+              case 0x82:
+                fan_mode_str = "auto";
+                fan_mode_detailed_str = "auto (medium)";
+                break;
+              case 0x84:
+                fan_mode_str = "auto";
+                fan_mode_detailed_str = "auto (low)";
+                break;
+              case 0x01:
+                fan_mode_str = fan_mode_detailed_str = "high";
+                break;
+              case 0x02:
+                fan_mode_str = fan_mode_detailed_str = "medium";
+                break;
+              case 0x04:
+                fan_mode_str = fan_mode_detailed_str = "low";
+                break;
+              default:
+                fan_mode_str = fan_mode_detailed_str = "auto";
+                ESP_LOGW("custom", "C0 byte 0x09 (fan mode) unknown value: %02X", bytes[0x09]);
+            }
+            id(fan_mode).publish_state(fan_mode_str);
+            id(fan_mode_detailed).publish_state(fan_mode_detailed_str);
+            last_c0_fan_mode = bytes[0x09];
+
+            if (!id(use_fahrenheit)) {
+              // For some reason, this does not use the 0.5C encoding, even though you can set the unit to 0.5C increments using the remote.
+              // Sometimes, the 0x40 bit is set, which seems to mean "done processing input", as it is unset
+              // (and at the same time, invalid configs are not yet overwritten) for a short time after each C3 message.
+              id(set_temp).publish_state(bytes[0x0A] & ~0x40);
+            }
+            last_c0_set_temp = bytes[0x0A];
+            if ((bytes[0x0A] & 0x40) == 0x00) {
+              ESP_LOGI("custom", "C0 byte 0x0A (set temp) does not have bit 0x40 set: %02X (processing input?)", bytes[0x0A]);
             }
 
             // these sensors are offset by 0x28 and in units of 0.5C regardless of what mode the unit is in
@@ -251,6 +238,21 @@ debug:
             id(compressor_status).publish_state(bytes[0x13] & 0x01);
             if (bytes[0x13] & ~0x01) {
               ESP_LOGW("custom", "C0 byte 0x13 (status?) unknown bits set: %02X (unknown: %02X)", bytes[0x13], bytes[0x13] & ~0x01);
+            }
+
+            const char* preset_mode_str;
+            if (bytes[0x14] & 0x01) {
+              preset_mode_str = "sleep";
+            } else if (bytes[0x14] & 0x02) {
+              preset_mode_str = "boost";
+            } else {
+              preset_mode_str = "none";
+            }
+            bool vertical_swing_enabled = bytes[0x14] & 0x04;
+            id(preset_mode).publish_state(preset_mode_str);
+            last_c0_vertical_swing = vertical_swing_enabled;
+            if (bytes[0x14] & ~(0x01 | 0x02 | 0x04)) {
+              ESP_LOGW("custom", "C0 byte 0x14 (preset/swing) unknown bits set: %02X (unknown: %02X)", bytes[0x14], bytes[0x14] & ~(0x01 | 0x02 | 0x04));
             }
 
             if (bytes[0x15] != 0x00) {
@@ -287,6 +289,13 @@ debug:
           // C4 - Extended Query
           ////////////////////////////////////////
           case 0xC4: {
+            if (id(new_input)) {
+              // Don't overwrite pending control state which hasn't been sent yet.
+              break;
+            }
+
+            id(fetched_initial_state) = true;
+
             if (bytes[0x06] != 0x05) {
               ESP_LOGW("custom", "C4 byte 0x06 (unknown) changed: %02X", bytes[0x06]);
             }
@@ -307,8 +316,17 @@ debug:
               ESP_LOGW("custom", "C4 byte 0x0A (unknown) changed: %02X", bytes[0x0A]);
             }
 
-            if (bytes[0x0B] || bytes[0x0C] || bytes[0x0D]) {
-              ESP_LOGW("custom", "C4 bytes 0x0B-0x0D (reserved?) changed: %02X %02X %02X", bytes[0x0B], bytes[0x0C], bytes[0x0D]);
+            bool vertical_swing_enabled = bytes[0x0B] & 0x10;
+            id(vertical_swing).publish_state(vertical_swing_enabled);
+            if (vertical_swing_enabled != last_c0_vertical_swing) {
+              ESP_LOGW("custom", "C4 byte 0x0B (swing?) vertical swing state changed vs. last C0: %02X (C0: %02X)", bytes[0x0B] & 0x10, last_c0_vertical_swing ? 0x10 : 0x00);
+            }
+            if (bytes[0x0B] & ~0x10) {
+              ESP_LOGW("custom", "C4 byte 0x0B (swing?) unknown bits set: %02X (unknown: %02X)", bytes[0x0B], bytes[0x0B] & ~0x10);
+            }
+
+            if (bytes[0x0C] || bytes[0x0D]) {
+              ESP_LOGW("custom", "C4 bytes 0x0C-0x0D (reserved?) changed: %02X %02X", bytes[0x0C], bytes[0x0D]);
             }
 
             if (bytes[0x0E] != 0x00) {
