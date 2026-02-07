@@ -334,7 +334,7 @@ debug:
                 id(set_temp).publish_state(bytes[0x12] - 0x87);
               }
             }
-            if (bytes[0x12] != last_c0_set_temp) {
+            if ((bytes[0x12] & ~0x40) != (last_c0_set_temp & ~0x40)) {
               ESP_LOGW("custom", "C4 byte 0x12 (set temp) changed vs. last C0: %02X (C0: %02X)", bytes[0x12], last_c0_set_temp);
             }
 
