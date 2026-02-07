@@ -12,8 +12,6 @@
   update_interval: 1s
   internal: true
 
-# dont change any of these temps to be F. They are always reported in C. If you want to display them in F, you can change the temperature unit in the home assistant UI
-
 - platform: template
   id: t1_temp
   name: "T1 Room Temp"

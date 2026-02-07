@@ -220,7 +220,7 @@ debug:
               ESP_LOGI("custom", "C0 byte 0x0A (set temp) does not have bit 0x40 set: %02X (processing input?)", bytes[0x0A]);
             }
 
-            // these sensors are offset by 0x28 and in units of 0.5C regardless of what mode the unit is in
+            // these sensors are offset by 0x28 and in units of 0.5°C regardless of what mode the unit is in
             id(t1_temp).publish_state((bytes[0x0B] - 0x28) / 2.0);
             id(t2a_temp).publish_state((bytes[0x0C] - 0x28) / 2.0);
             id(t2b_temp).publish_state((bytes[0x0D] - 0x28) / 2.0);
