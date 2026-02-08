@@ -209,16 +209,30 @@ debug:
             id(fan_mode_detailed).publish_state(fan_mode_detailed_str);
             last_c0_fan_mode = bytes[0x09];
 
-            if (!id(use_fahrenheit)) {
-              // For some reason, this does not use the 0.5C encoding, even though you can set the unit to 0.5C increments using the remote.
-              // Sometimes, the 0x40 bit is set, which seems to mean "done processing input", as it is unset
-              // (and at the same time, invalid configs are not yet overwritten) for a short time after each C3 message.
-              id(set_temp).publish_state(bytes[0x0A] & ~0x40);
+            double new_set_temp;
+            if (bytes[0x0A] >= 0x50 && bytes[0x0A] <= 0x5E) {
+              // °C
+              new_set_temp = bytes[0x0A] - 0x40;
+            } else if (bytes[0x0A] >= 0x60 && bytes[0x0A] <= 0x6D) {
+              // °C + 0.5
+              new_set_temp = bytes[0x0A] - 0x50 + 0.5;
+            } else if (bytes[0x0A] >= 0xC3 && bytes[0x0A] <= 0xDD) {
+              // °F
+              new_set_temp = bytes[0x0A] - 0x87;
+            } else {
+              new_set_temp = 0;
+            }
+            // For some reason, setpoints are always rounded to the nearest 1°C, even though you can set the unit to 0.5°C increments.
+            // So ignore a discrepancy of less than 1 degree with the current state, and just assume it's set to the right value.
+            double delta = std::abs(id(set_temp).state - new_set_temp);
+            if (new_set_temp == 0.0) {
+              ESP_LOGW("custom", "C0 byte 0x0A (set temp) has unknown encoding: %02X", bytes[0x0A]);
+            } else if (delta < 1.0) {
+              ESP_LOGD("custom", "C0 byte 0x0A (set temp) is close to current temp, ignoring: %0.1f (current: %0.1f)", new_set_temp, id(set_temp).state);
+            } else {
+              id(set_temp).publish_state(new_set_temp);
             }
             last_c0_set_temp = bytes[0x0A];
-            if ((bytes[0x0A] & 0x40) == 0x00) {
-              ESP_LOGI("custom", "C0 byte 0x0A (set temp) does not have bit 0x40 set: %02X (processing input?)", bytes[0x0A]);
-            }
 
             // these sensors are offset by 0x28 and in units of 0.5°C regardless of what mode the unit is in
             id(t1_temp).publish_state((bytes[0x0B] - 0x28) / 2.0);
@@ -345,14 +359,7 @@ debug:
               ESP_LOGW("custom", "C4 byte 0x11 (fan mode?) changed vs. last C0: %02X (C0: %02X)", bytes[0x11], last_c0_fan_mode);
             }
 
-            if (id(use_fahrenheit))
-            {
-              // sometimes this temporarily gives erroneous values before correcting itself, ignore them
-              if (bytes[0x12] > 0x87 && bytes[0x12] < 215) {
-                id(set_temp).publish_state(bytes[0x12] - 0x87);
-              }
-            }
-            if ((bytes[0x12] & ~0x40) != (last_c0_set_temp & ~0x40)) {
+            if (bytes[0x12] != last_c0_set_temp) {
               ESP_LOGW("custom", "C4 byte 0x12 (set temp) changed vs. last C0: %02X (C0: %02X)", bytes[0x12], last_c0_set_temp);
             }
 

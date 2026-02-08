@@ -111,13 +111,47 @@
           ESP_LOGW("custom", "Defaulting to auto, invalid fan input: %s", id(fan_mode).current_option().c_str());
         }
 
+        // Possible setpoint values:
+        //
+        // Celsius range:    16 - 30 °C
+        // Fahrenheit range: 60 - 86 °F
+        //
+        // Celsius:     0x00 - 0x0E [size: 15] (encoding: temp - 0x10)
+        // Set °C:      0x0F        [size:  1] (sets display mode to °C)
+        // Celsius:     0x10 - 0x1E [size: 15] (encoding: identity)
+        // Set °C:      0x1F        [size:  1]
+        // Celsius 0.5: 0x20 - 0x2E [size: 15] (encoding: temp - 0.5 + 0x10, for 0.5°C increments; last is 30.0°C)
+        // Set °C:      0x2F        [size:  1]
+        //              0x30 - 0x3F [size: 16] (setting values here causes weird behavior, like enabling fan_only mode)
+        // Celsius:     0x40 - 0x4E [size: 15] (encoding: temp + 0x30)
+        // Set °C:      0x4F        [size:  1]
+        // Celsius:     0x50 - 0x5E [size: 15] (encoding: temp + 0x40; this is the "canonical" value it returns in C0/C4 responses)
+        // Set °C:      0x5F        [size:  1]
+        // Celsius 0.5: 0x60 - 0x6E [size: 15] (encoding: temp - 0.5 + 0x50, for 0.5°C increments; last is 30.0°C)
+        // Set 0.5:     0x6F        [size:  1] (sets 0.5°C on the current setpoint)
+        //              0x70 - 0x7F [size: 16] (setting values here causes weird behavior, like enabling fan_only mode)
+        // Celsius->°F: 0x80 - 0x8E [size: 15] (encoding: temp in °C + 0x70 but displayed as °F; rounded to nearest-ish [first two tweaked to 60/62°F instead of 61/63°F])
+        // Set °F:      0x8F        [size:  1] (sets display mode to °F; rounded to nearest-ish)
+        // Celsius->°F: 0x90 - 0x9E [size: 15] (rounded to nearest-ish)
+        // Set °F:      0x9F        [size:  1] (rounded to nearest-ish)
+        // Celsius->°F: 0xA0 - 0xAE [size: 15] (rounded up...ish [I really don't know what they did here])
+        // Set °F:      0xAF        [size:  1] (rounded up...ish)
+        //              0xB0 - 0xBF [size: 16] (setting values here causes weird behavior, like enabling fan_only mode)
+        //              0xC0 - 0xC2 [size:  3] (truncated Fahrenheit scale: 83, 84, 85°F)
+        // Fahrehneit:  0xC3 - 0xDE [size: 28] (encoding: temp_f + 0x87; this is the "canonical" value it returns in C0/C4 responses; last is 86°F again)
+        // Set °F:      0xDF        [size:  1] (rounded to nearest-ish)
+        // Set °F:      0xE0        [size:  1] (rounded up...ish)
+        // Fahrehneit:  0xE1 - 0xFE [size: 30] (encoding: messed up, with repeated values)
+        //              0xFF        [size:  1] (ignored)
         uint8_t encoded_temp;
         if (id(use_fahrenheit)) {
           encoded_temp = static_cast<uint8_t>(std::round(id(set_temp).state)) + 0x87;
         } else {
-          // Bizarrely, the set temp is in integer °C, even though everything else is in 0.5°C increments.
-          // When set to 0.5°C via the remote, the reported temperature is floored in C0 responses, so do the same here.
-          encoded_temp = static_cast<uint8_t>(std::floor(id(set_temp).state));
+          // Round to the nearest 0.5°C
+          double temp_c = std::round(2.0 * id(set_temp).state) / 2.0;
+          uint8_t whole_part = static_cast<uint8_t>(std::floor(temp_c));
+          bool has_half = whole_part != temp_c;
+          encoded_temp = whole_part + (has_half ? 0x50 : 0x40);
         }
 
         uint8_t mode_byte;
