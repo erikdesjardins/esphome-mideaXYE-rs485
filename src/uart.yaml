@@ -222,8 +222,11 @@ debug:
             } else {
               new_set_temp = 0;
             }
-            // For some reason, setpoints are always rounded to the nearest 1°C, even though you can set the unit to 0.5°C increments.
-            // So ignore a discrepancy of less than 1 degree with the current state, and just assume it's set to the right value.
+            // For some reason, setpoints are always rounded to the nearest 1°C, even though you can set 0.5°C increments.
+            // So we ignore a discrepancy of less than 1 degree with the current state, and just assume it's set to the right value.
+            // However, we also need to handle the 0.5°C encoding that we send, since it will be echoed back to us temporarily.
+            // Note that this could be used to detect when the unit is still processing input (e.g. by using a non-canonical temperature encoding)
+            // in order to ignore potential temporary states, but I haven't done that because it shouldn't happen normally (except for this specific case).
             double delta = std::abs(id(set_temp).state - new_set_temp);
             if (new_set_temp == 0.0) {
               ESP_LOGW("custom", "C0 byte 0x0A (set temp) has unknown encoding: %02X", bytes[0x0A]);
