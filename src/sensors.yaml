@@ -57,7 +57,7 @@
 
 - platform: template
   id: current
-  name: "Current Draw"
+  name: "Current"
   unit_of_measurement: "A"
   device_class: current
   state_class: measurement
