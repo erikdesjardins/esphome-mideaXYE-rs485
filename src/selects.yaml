@@ -1,6 +1,7 @@
 - platform: template
   id: op_mode
   name: "Operating Mode"
+  icon: mdi:thermostat
   options:
     - "off"
     - auto
@@ -22,6 +23,7 @@
 - platform: template
   id: fan_mode
   name: "Fan Mode"
+  icon: mdi:fan
   options:
     - low
     - medium
