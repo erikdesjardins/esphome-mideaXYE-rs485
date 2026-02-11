@@ -180,8 +180,6 @@
       ////////////////////////////////////////
 
       if (id(uptime_sensor).state - id(last_follow_me_message) > 30) {
-        id(last_follow_me_message) = static_cast<uint32_t>(id(uptime_sensor).state);
-
         do {
           // If the unit is off, do not send follow me packets
           if (id(op_mode).current_option() == "off") {
@@ -223,6 +221,8 @@
             ._0x0A = follow_me_cmd,
             ._0x0B = follow_me_encoded_temp,
           });
+
+          id(last_follow_me_message) = static_cast<uint32_t>(id(uptime_sensor).state);
         } while (0);
       }
 
