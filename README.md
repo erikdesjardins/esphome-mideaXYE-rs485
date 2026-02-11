@@ -65,4 +65,4 @@ packages:
 | **tx_pin** | GPIO Pin | N/A | TX pin for your RS485 Transceiver |
 | **baud_rate** | int | `4800` | Baud rate (Shouldn't need to change this.) |
 | **use_fahrenheit** | bool | `true` | Whether to use °F or °C for the set point. Note that all other values will always be reported in °C. (May need to set the set point again after changing this.) |
-| **follow_me_timeout** | int | `1800` | Time in seconds after which to disable follow me if you have not updated the temperature. (This is to prevent locking the system on or off if Home Assistant goes offline.) |
+| **follow_me_timeout** | int | `1800` | Time in seconds after which to disable Follow Me if you have not updated the temperature. (This is to prevent locking the system on or off if Home Assistant goes offline.) Note: because of this, the same automation which sets the Follow Me temperature should also turn on the Follow Me switch, so it will automatically recover from such situations. |
