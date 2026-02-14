@@ -66,26 +66,26 @@ debug:
 
         {
           if (bytes[0x00] != 0xAA) {
-            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x00): bad preamble: %02X", bytes[0x00]);
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x00): bad preamble: 0x%02X", bytes[0x00]);
             return;
           }
 
           // bytes[0x01] is the command flag, to be handled below
 
           if (bytes[0x02] != 0x00) {
-            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x02): unexpected direction flag: %02X", bytes[0x02]);
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x02): unexpected direction flag: 0x%02X", bytes[0x02]);
             return;
           }
           if (bytes[0x03] != 0x00) {
-            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x03): unexpected destination: %02X", bytes[0x03]);
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x03): unexpected destination: 0x%02X", bytes[0x03]);
             return;
           }
           if (bytes[0x04] != 0x00) {
-            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x04): unexpected source: %02X", bytes[0x04]);
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x04): unexpected source: 0x%02X", bytes[0x04]);
             return;
           }
           if (bytes[0x05] != bytes[0x03]) {
-            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x05): destination check vs. destination: %02X vs. %02X", bytes[0x05], bytes[0x03]);
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x05): destination check vs. destination: 0x%02X vs. 0x%02X", bytes[0x05], bytes[0x03]);
             return;
           }
 
@@ -100,12 +100,12 @@ debug:
           }
           crc = ~crc;
           if (bytes[0x1E] != static_cast<uint8_t>(crc)) {
-            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x1E): CRC vs. expected: %02X vs. %02X", bytes[0x1E], static_cast<uint8_t>(crc));
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x1E): CRC vs. expected: 0x%02X vs. 0x%02X", bytes[0x1E], static_cast<uint8_t>(crc));
             return;
           }
 
           if (bytes[0x1F] != 0x55) {
-            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x1F): bad prologue: %02X", bytes[0x1F]);
+            ESP_LOGW("uart_debug", "Bad UART packet (byte 0x1F): bad prologue: 0x%02X", bytes[0x1F]);
             return;
           }
         }
@@ -123,11 +123,11 @@ debug:
             }
 
             if (bytes[0x06] != 0x10) {
-              ESP_LOGW("custom", "C0 byte 0x06 (capabilities 1?) changed: %02X", bytes[0x06]);
+              ESP_LOGW("custom", "C0 byte 0x06 (capabilities 1?) changed: 0x%02X", bytes[0x06]);
             }
 
             if (bytes[0x07] != 0x30) {
-              ESP_LOGW("custom", "C0 byte 0x07 (capabilities 2?) changed: %02X", bytes[0x07]);
+              ESP_LOGW("custom", "C0 byte 0x07 (capabilities 2?) changed: 0x%02X", bytes[0x07]);
             }
 
             // Operating mode
@@ -167,7 +167,7 @@ debug:
                 break;
               default:
                 op_mode_str = op_mode_status_str = "off";
-                ESP_LOGW("custom", "C0 byte 0x08 (op mode) unknown value: %02X", bytes[0x08]);
+                ESP_LOGW("custom", "C0 byte 0x08 (op mode) unknown value: 0x%02X", bytes[0x08]);
             }
             id(op_mode).publish_state(op_mode_str);
             id(op_mode_status).publish_state(op_mode_status_str);
@@ -203,7 +203,7 @@ debug:
                 break;
               default:
                 fan_mode_str = fan_mode_status_str = "auto";
-                ESP_LOGW("custom", "C0 byte 0x09 (fan mode) unknown value: %02X", bytes[0x09]);
+                ESP_LOGW("custom", "C0 byte 0x09 (fan mode) unknown value: 0x%02X", bytes[0x09]);
             }
             id(fan_mode).publish_state(fan_mode_str);
             id(fan_mode_status).publish_state(fan_mode_status_str);
@@ -229,7 +229,7 @@ debug:
             // in order to ignore potential temporary states, but I haven't done that because it shouldn't happen normally (except for this specific case).
             double delta = std::abs(id(set_temp).state - new_set_temp);
             if (new_set_temp == 0.0) {
-              ESP_LOGW("custom", "C0 byte 0x0A (set temp) has unknown encoding: %02X", bytes[0x0A]);
+              ESP_LOGW("custom", "C0 byte 0x0A (set temp) has unknown encoding: 0x%02X", bytes[0x0A]);
             } else if (delta < 1.0) {
               ESP_LOGD("custom", "C0 byte 0x0A (set temp) is close to current temp, ignoring: %0.1f (current: %0.1f)", new_set_temp, id(set_temp).state);
             } else {
@@ -246,7 +246,7 @@ debug:
             id(current).publish_state(bytes[0x0F]);
 
             if (bytes[0x10] != 0xFF) {
-              ESP_LOGW("custom", "C0 byte 0x10 (frequency) changed: %02X", bytes[0x10]);
+              ESP_LOGW("custom", "C0 byte 0x10 (frequency) changed: 0x%02X", bytes[0x10]);
             }
 
             // bytes[0x11] is timer start, ignoring since it doesn't make sense to use it
@@ -254,7 +254,7 @@ debug:
 
             id(compressor_status).publish_state(bytes[0x13] & 0x01);
             if (bytes[0x13] & ~0x01) {
-              ESP_LOGW("custom", "C0 byte 0x13 (status?) unknown bits set: %02X (unknown: %02X)", bytes[0x13], bytes[0x13] & ~0x01);
+              ESP_LOGW("custom", "C0 byte 0x13 (status?) unknown bits set: 0x%02X (unknown: 0x%02X)", bytes[0x13], bytes[0x13] & ~0x01);
             }
 
             const char* preset_mode_str;
@@ -269,11 +269,11 @@ debug:
             id(preset_mode).publish_state(preset_mode_str);
             last_c0_vertical_swing = vertical_swing_enabled;
             if (bytes[0x14] & ~(0x01 | 0x02 | 0x04)) {
-              ESP_LOGW("custom", "C0 byte 0x14 (preset/swing) unknown bits set: %02X (unknown: %02X)", bytes[0x14], bytes[0x14] & ~(0x01 | 0x02 | 0x04));
+              ESP_LOGW("custom", "C0 byte 0x14 (preset/swing) unknown bits set: 0x%02X (unknown: 0x%02X)", bytes[0x14], bytes[0x14] & ~(0x01 | 0x02 | 0x04));
             }
 
             if (bytes[0x15] != 0x00) {
-              ESP_LOGW("custom", "C0 byte 0x15 (oper flags?) changed: %02X", bytes[0x15]);
+              ESP_LOGW("custom", "C0 byte 0x15 (oper flags?) changed: 0x%02X", bytes[0x15]);
             }
 
             id(error_flags).publish_state(bytes[0x16] | (bytes[0x17] << 8));
@@ -282,11 +282,11 @@ debug:
             id(defrost_status).publish_state(bytes[0x18] == 0x02);
 
             if (bytes[0x1A] != 0x00) {
-              ESP_LOGW("custom", "C0 byte 0x1A (CCM comm error flags) changed: %02X", bytes[0x1A]);
+              ESP_LOGW("custom", "C0 byte 0x1A (CCM comm error flags) changed: 0x%02X", bytes[0x1A]);
             }
 
             if (bytes[0x1B] != 0xFF) {
-              ESP_LOGW("custom", "C0 byte 0x1B (unknown) changed: %02X", bytes[0x1B]);
+              ESP_LOGW("custom", "C0 byte 0x1B (unknown) changed: 0x%02X", bytes[0x1B]);
             }
 
             if (bytes[0x1C] || bytes[0x1D]) {
@@ -314,23 +314,23 @@ debug:
             id(fetched_initial_state) = true;
 
             if (bytes[0x06] != 0x05) {
-              ESP_LOGW("custom", "C4 byte 0x06 (unknown) changed: %02X", bytes[0x06]);
+              ESP_LOGW("custom", "C4 byte 0x06 (unknown) changed: 0x%02X", bytes[0x06]);
             }
 
             if (bytes[0x07] != 0x00) {
-              ESP_LOGW("custom", "C4 byte 0x07 (unknown) changed: %02X", bytes[0x07]);
+              ESP_LOGW("custom", "C4 byte 0x07 (unknown) changed: 0x%02X", bytes[0x07]);
             }
 
             if (bytes[0x08] != 0x02) {
-              ESP_LOGW("custom", "C4 byte 0x08 (unknown) changed: %02X", bytes[0x08]);
+              ESP_LOGW("custom", "C4 byte 0x08 (unknown) changed: 0x%02X", bytes[0x08]);
             }
 
             if (bytes[0x09] != 0x30) {
-              ESP_LOGW("custom", "C4 byte 0x09 (same as C0 0x07 capabilities?) changed: %02X", bytes[0x09]);
+              ESP_LOGW("custom", "C4 byte 0x09 (same as C0 0x07 capabilities?) changed: 0x%02X", bytes[0x09]);
             }
 
             if (bytes[0x0A] != 0x0E) {
-              ESP_LOGW("custom", "C4 byte 0x0A (unknown) changed: %02X", bytes[0x0A]);
+              ESP_LOGW("custom", "C4 byte 0x0A (unknown) changed: 0x%02X", bytes[0x0A]);
             }
 
             bool vertical_swing_enabled = bytes[0x0B] & 0x10;
@@ -338,10 +338,10 @@ debug:
             id(vertical_swing).publish_state(vertical_swing_enabled);
             id(horizontal_swing).publish_state(horizontal_swing_enabled);
             if (vertical_swing_enabled != last_c0_vertical_swing) {
-              ESP_LOGW("custom", "C4 byte 0x0B (swing?) vertical swing state changed: %02X (vs. last C0: %02X)", bytes[0x0B] & 0x10, last_c0_vertical_swing ? 0x10 : 0x00);
+              ESP_LOGW("custom", "C4 byte 0x0B (swing?) vertical swing state changed: 0x%02X (vs. last C0: 0x%02X)", bytes[0x0B] & 0x10, last_c0_vertical_swing ? 0x10 : 0x00);
             }
             if (bytes[0x0B] & ~(0x10 | 0x20)) {
-              ESP_LOGW("custom", "C4 byte 0x0B (swing?) unknown bits set: %02X (unknown: %02X)", bytes[0x0B], bytes[0x0B] & ~(0x10 | 0x20));
+              ESP_LOGW("custom", "C4 byte 0x0B (swing?) unknown bits set: 0x%02X (unknown: 0x%02X)", bytes[0x0B], bytes[0x0B] & ~(0x10 | 0x20));
             }
 
             if (bytes[0x0C] || bytes[0x0D]) {
@@ -349,31 +349,31 @@ debug:
             }
 
             if (bytes[0x0E] != 0x00) {
-              ESP_LOGW("custom", "C4 byte 0x0E (unknown) changed: %02X", bytes[0x0E]);
+              ESP_LOGW("custom", "C4 byte 0x0E (unknown) changed: 0x%02X", bytes[0x0E]);
             }
 
             if (bytes[0x0F] != 0x00) {
-              ESP_LOGW("custom", "C4 byte 0x0F (aux heat flags?) changed: %02X", bytes[0x0F]);
+              ESP_LOGW("custom", "C4 byte 0x0F (aux heat flags?) changed: 0x%02X", bytes[0x0F]);
             }
 
             if (bytes[0x10] != last_c0_op_mode) {
-              ESP_LOGW("custom", "C4 byte 0x10 (op mode?) changed: %02X (vs. last C0: %02X)", bytes[0x10], last_c0_op_mode);
+              ESP_LOGW("custom", "C4 byte 0x10 (op mode?) changed: 0x%02X (vs. last C0: 0x%02X)", bytes[0x10], last_c0_op_mode);
             }
 
             if (bytes[0x11] != last_c0_fan_mode) {
-              ESP_LOGW("custom", "C4 byte 0x11 (fan mode?) changed: %02X (vs. last C0: %02X)", bytes[0x11], last_c0_fan_mode);
+              ESP_LOGW("custom", "C4 byte 0x11 (fan mode?) changed: 0x%02X (vs. last C0: 0x%02X)", bytes[0x11], last_c0_fan_mode);
             }
 
             if (bytes[0x12] != last_c0_set_temp) {
-              ESP_LOGW("custom", "C4 byte 0x12 (set temp) changed: %02X (vs. last C0: %02X)", bytes[0x12], last_c0_set_temp);
+              ESP_LOGW("custom", "C4 byte 0x12 (set temp) changed: 0x%02X (vs. last C0: 0x%02X)", bytes[0x12], last_c0_set_temp);
             }
 
             if (bytes[0x13] != 0xBC) {
-              ESP_LOGW("custom", "C4 byte 0x13 (unknown) changed: %02X", bytes[0x13]);
+              ESP_LOGW("custom", "C4 byte 0x13 (unknown) changed: 0x%02X", bytes[0x13]);
             }
 
             if (bytes[0x14] != 0xD6) {
-              ESP_LOGW("custom", "C4 byte 0x14 (unknown) changed: %02X", bytes[0x14]);
+              ESP_LOGW("custom", "C4 byte 0x14 (unknown) changed: 0x%02X", bytes[0x14]);
             }
 
             id(t4_temp).publish_state((bytes[0x15] - 0x28) / 2.0);
@@ -399,7 +399,7 @@ debug:
           }
 
           default: {
-            ESP_LOGW("custom", "Unknown command: %02X", bytes[0x01]);
+            ESP_LOGW("custom", "Unknown command: 0x%02X", bytes[0x01]);
             return;
           }
         }

@@ -34,7 +34,7 @@
       };
       auto enqueue_send = [](payload x) {
         if (id(send_queue_len) >= id(send_queue).size()) {
-          ESP_LOGW("custom", "Send queue full, dropping command %02X", x._0x01);
+          ESP_LOGW("custom", "Send queue full, dropping command 0x%02X", x._0x01);
           return;
         }
 
