@@ -267,6 +267,7 @@ debug:
             }
             bool vertical_swing_enabled = bytes[0x14] & 0x04;
             id(preset_mode).publish_state(preset_mode_str);
+            id(vertical_swing).publish_state(vertical_swing_enabled);
             last_c0_vertical_swing = vertical_swing_enabled;
             if (bytes[0x14] & ~(0x01 | 0x02 | 0x04)) {
               ESP_LOGW("custom", "C0 byte 0x14 (preset/swing) unknown bits set: 0x%02X (unknown: 0x%02X)", bytes[0x14], bytes[0x14] & ~(0x01 | 0x02 | 0x04));
@@ -335,7 +336,6 @@ debug:
 
             bool vertical_swing_enabled = bytes[0x0B] & 0x10;
             bool horizontal_swing_enabled = bytes[0x0B] & 0x20;
-            id(vertical_swing).publish_state(vertical_swing_enabled);
             id(horizontal_swing).publish_state(horizontal_swing_enabled);
             if (vertical_swing_enabled != last_c0_vertical_swing) {
               ESP_LOGW("custom", "C4 byte 0x0B (swing?) vertical swing state changed: 0x%02X (vs. last C0: 0x%02X)", bytes[0x0B] & 0x10, last_c0_vertical_swing ? 0x10 : 0x00);
