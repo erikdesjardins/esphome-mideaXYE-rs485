@@ -61,6 +61,10 @@
   unit_of_measurement: "A"
   device_class: current
   state_class: measurement
+  # This appears to be correlated with the activity of the indoor unit,
+  # but it doesn't match the current reported by the device in inquiry mode
+  # (nor does it seem to be a multiple of it), so disable it by default.
+  disabled_by_default: true
 
 - platform: template
   id: error_flags
