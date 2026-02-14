@@ -70,8 +70,10 @@
   id: error_flags
   name: "Error Flags"
   state_class: measurement
+  entity_category: diagnostic
 
 - platform: template
   id: protect_flags
   name: "Protect Flags"
   state_class: measurement
+  entity_category: diagnostic
