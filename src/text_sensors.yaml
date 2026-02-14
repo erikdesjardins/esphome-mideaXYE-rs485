@@ -1,7 +1,7 @@
 - platform: template
-  id: op_mode_detailed
-  name: "Detailed Operating Mode"
+  id: op_mode_status
+  name: "Operating Mode Status"
 
 - platform: template
-  id: fan_mode_detailed
-  name: "Detailed Fan Mode"
+  id: fan_mode_status
+  name: "Fan Mode Status"

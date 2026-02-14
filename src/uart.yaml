@@ -132,81 +132,81 @@ debug:
 
             // Operating mode
             const char* op_mode_str;
-            const char* op_mode_detailed_str;
+            const char* op_mode_status_str;
             switch (bytes[0x08]) {
               case 0x00:
-                op_mode_str = op_mode_detailed_str = "off";
+                op_mode_str = op_mode_status_str = "off";
                 break;
               case 0x10:
                 op_mode_str = "auto";
-                op_mode_detailed_str = "auto (15m startup)";
+                op_mode_status_str = "auto (15m startup)";
                 break;
               case 0x91:
                 op_mode_str = "auto";
-                op_mode_detailed_str = "auto (heating)";
+                op_mode_status_str = "auto (heating)";
                 break;
               case 0x98:
                 op_mode_str = "auto";
-                op_mode_detailed_str = "auto (cooling)";
+                op_mode_status_str = "auto (cooling)";
                 break;
               case 0x94:
                 op_mode_str = "auto";
-                op_mode_detailed_str = "auto (idle)";
+                op_mode_status_str = "auto (idle)";
                 break;
               case 0x88:
-                op_mode_str = op_mode_detailed_str = "cool";
+                op_mode_str = op_mode_status_str = "cool";
                 break;
               case 0x82:
-                op_mode_str = op_mode_detailed_str = "dry";
+                op_mode_str = op_mode_status_str = "dry";
                 break;
               case 0x84:
-                op_mode_str = op_mode_detailed_str = "heat";
+                op_mode_str = op_mode_status_str = "heat";
                 break;
               case 0x81:
-                op_mode_str = op_mode_detailed_str = "fan_only";
+                op_mode_str = op_mode_status_str = "fan_only";
                 break;
               default:
-                op_mode_str = op_mode_detailed_str = "off";
+                op_mode_str = op_mode_status_str = "off";
                 ESP_LOGW("custom", "C0 byte 0x08 (op mode) unknown value: %02X", bytes[0x08]);
             }
             id(op_mode).publish_state(op_mode_str);
-            id(op_mode_detailed).publish_state(op_mode_detailed_str);
+            id(op_mode_status).publish_state(op_mode_status_str);
             last_c0_op_mode = bytes[0x08];
 
             // Fan mode
             const char* fan_mode_str;
-            const char* fan_mode_detailed_str;
+            const char* fan_mode_status_str;
             switch (bytes[0x09]) {
               case 0x80:
-                fan_mode_str = fan_mode_detailed_str = "auto";
+                fan_mode_str = fan_mode_status_str = "auto";
                 break;
               case 0x81:
                 fan_mode_str = "auto";
-                fan_mode_detailed_str = "auto (high)";
+                fan_mode_status_str = "auto (high)";
                 break;
               case 0x82:
                 fan_mode_str = "auto";
-                fan_mode_detailed_str = "auto (medium)";
+                fan_mode_status_str = "auto (medium)";
                 break;
               case 0x84:
                 fan_mode_str = "auto";
-                fan_mode_detailed_str = "auto (low)";
+                fan_mode_status_str = "auto (low)";
                 break;
               case 0x01:
-                fan_mode_str = fan_mode_detailed_str = "high";
+                fan_mode_str = fan_mode_status_str = "high";
                 break;
               case 0x02:
-                fan_mode_str = fan_mode_detailed_str = "medium";
+                fan_mode_str = fan_mode_status_str = "medium";
                 break;
               case 0x04:
-                fan_mode_str = fan_mode_detailed_str = "low";
+                fan_mode_str = fan_mode_status_str = "low";
                 break;
               default:
-                fan_mode_str = fan_mode_detailed_str = "auto";
+                fan_mode_str = fan_mode_status_str = "auto";
                 ESP_LOGW("custom", "C0 byte 0x09 (fan mode) unknown value: %02X", bytes[0x09]);
             }
             id(fan_mode).publish_state(fan_mode_str);
-            id(fan_mode_detailed).publish_state(fan_mode_detailed_str);
+            id(fan_mode_status).publish_state(fan_mode_status_str);
             last_c0_fan_mode = bytes[0x09];
 
             double new_set_temp;
