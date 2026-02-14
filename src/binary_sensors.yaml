@@ -5,3 +5,7 @@
 - platform: template
   id: defrost_status
   name: "Defrost"
+
+- platform: template
+  id: horizontal_swing
+  name: "Horizontal Swing"
