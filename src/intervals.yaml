@@ -171,6 +171,8 @@
           ._0x06 = op_byte,
           ._0x07 = fan_byte,
           ._0x08 = encoded_temp,
+          // ._0x09 = timer_start,
+          // ._0x0A = timer_stop,
           ._0x0B = mode_byte,
         });
       }
