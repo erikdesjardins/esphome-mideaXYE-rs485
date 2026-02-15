@@ -97,6 +97,20 @@
           ESP_LOGW("custom", "Defaulting to off, invalid op mode input: %s", id(op_mode).current_option().c_str());
         }
 
+        // When setting fan speed with the remote:
+        // Fan speed | C0 byte 0x09 | C4 byte 0x11
+        // 1%-39%          0x08           0x04       [Trying to _set_ 0x08 fan speed doesn't work, it gets set to auto.]
+        // 40%-59%         0x04           0x04
+        // 60%-79%         0x02           0x02
+        // 80%-100%        0x01           0x01
+        //
+        // The unused bits 0x40, 0x20, and 0x10 can be set, in combination with the auto bit (0x80) and the fan speed bits (0x04, 0x02, 0x01),
+        // following some rules:
+        // - Exactly one bit out of the following must be set: 0x80 (auto), 0x04 (low), 0x02 (medium), 0x01 (high).
+        // - If all of those bits are set, 0x04 (low) will take precedence.
+        // - If none of those bits are set, 0x80 (auto) will be set.
+        // Otherwise, the unused bits can also be set, seemingly in any combination, and are persistently mirrored in the response,
+        // but don't seem to have any effect.
         uint8_t fan_byte;
         if (id(fan_mode).current_option() == "auto") {
           fan_byte = 0x80;
