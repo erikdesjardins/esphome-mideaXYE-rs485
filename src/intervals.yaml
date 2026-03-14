@@ -18,8 +18,8 @@
 
               return message;
 
-# Send control updates (if any), follow me (every 30s), and update the status every second.
-- interval: 1s
+# Send control updates (if any), follow me (every 30s), and update the status every 2 seconds.
+- interval: 2s
   then:
     lambda: !lambda |-
       struct payload {
