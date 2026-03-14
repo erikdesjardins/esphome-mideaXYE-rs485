@@ -18,10 +18,12 @@
 
               return message;
 
-# Send control updates (if any), follow me (every 30s), and update the status every 2 seconds.
+# Send control updates (if any), send follow me, and poll for status updates.
 - interval: 2s
   then:
     lambda: !lambda |-
+      static uint32_t follow_me_interval = 30; // seconds
+
       struct payload {
         uint8_t _0x01;
         uint8_t _0x06;
@@ -195,7 +197,7 @@
       // C6 - Extended Set (follow me)
       ////////////////////////////////////////
 
-      if (id(uptime_sensor).state - id(last_follow_me_message) > 30) {
+      if (id(uptime_sensor).state - id(last_follow_me_message) > follow_me_interval) {
         do {
           // If the unit is off, do not send follow me packets
           if (id(op_mode).current_option() == "off") {
